@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/presets/ERC20PresetMinterPauserUpgradeable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/presets/ERC20PresetMinterPauserUpgradeable.sol";
 
 import "./OwnableContract.sol";
 
@@ -68,14 +68,14 @@ contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
 
     function lockAccount(address account) public onlyOwner {
         uint256 bal = balanceOf(account);
-        _totalSupplyLocked.add(bal);
+        _totalSupplyLocked = _totalSupplyLocked.add(bal);
         _lockMap[account] = _lockMagicNum;
         emit Lock(account,bal);
     }
 
     function unLockAccount(address account) public onlyOwner {
         uint256 bal = balanceOf(account);
-        _totalSupplyLocked.sub(bal);
+        _totalSupplyLocked = _totalSupplyLocked.sub(bal);
         _lockMap[account] = _unLockMagicNum;
         emit UnLock(account,bal);
     }
@@ -90,7 +90,7 @@ contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
         require(lock<10,"you are not allowed to move coins atm");
         lock = _lockMap[to];
         if (lock>=10){
-            _totalSupplyLocked.add(amount);
+            _totalSupplyLocked = _totalSupplyLocked.add(amount);
         }
     }
     

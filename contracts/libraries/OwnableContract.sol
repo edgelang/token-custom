@@ -1,8 +1,9 @@
 pragma solidity >=0.4.22 <0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/GSN/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/GSN/ContextUpgradeable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
@@ -84,6 +85,16 @@ contract OwnableContract is Initializable, ContextUpgradeable {
      */
     function transferOwnership(address newOwner) public onlyOwner {
         pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the current owner to set the pendingOwner address.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnershipImmediately(address newOwner) public onlyOwner {
+        require(address(0)!=newOwner,"not allowed to transfer owner to address(0)");
+        _owner = newOwner;
+        emit OwnershipTransferred(_owner, newOwner);
     }
     /**
      * @dev Allows the pendingOwner address to finalize the transfer.
