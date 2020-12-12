@@ -122,10 +122,13 @@ contract FarmAlloweLockedToken is MiningFarm{
         //we can't change the status for calculating reward before 2 rounds agao
         //because the user already staked full for mining 2 rounds agao
         uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
-
+        uint currentKey = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         uint256 needCost = amount;
         bool updateReward = false;
         bool[] memory toDelete = new bool[](ii);
+        _initOrUpdateLowestWaterMarkAndTotalStaked(currentKey,0);
+        RoundSlotInfo storage currentSlot = _getRoundSlotInfo(currentKey);
+        uint256 update = 0;
         for (ii;ii>0;ii--){
             if (needCost == 0){
                 break;
@@ -138,14 +141,13 @@ contract FarmAlloweLockedToken is MiningFarm{
             }
             StakeRecord storage record = user.stakeInfo[timeKey];
             RoundSlotInfo storage slot = _getRoundSlotInfo(timeKey);
-            uint256 remain = record.lockedAmount.sub(record.lockedWithdrawed);
-            uint256 update = remain;
-            if (needCost<=remain){
-                record.lockedWithdrawed = needCost;
+            update = record.lockedAmount.sub(record.lockedWithdrawed);
+            if (needCost<=update){
+                record.lockedWithdrawed = record.lockedWithdrawed.add(needCost);
                 update = needCost;
                 needCost = 0;
             }else{
-                needCost = needCost.sub(remain);
+                needCost = needCost.sub(update);
                 record.lockedWithdrawed = record.lockedAmount;
                 //record maybe can be delete, withdrawed all
                 if (_getRecordStaked(record)==0){
@@ -155,8 +157,15 @@ contract FarmAlloweLockedToken is MiningFarm{
             }
             if (timeKey > alreadyMinedTimeKey){
                 slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update);
-                // uint nearMiningTKey = alreadyMinedTimeKey.add(_miniStakePeriodInSeconds);
                 slot.totalStaked =slot.totalStaked.sub(amount);
+            }
+            if (update>0 && timeKey<currentKey){
+                if (currentSlot.stakedLowestWaterMark.sub(update)>0){
+                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update);
+                }else{
+                    currentSlot.stakedLowestWaterMark = 0;
+                }
+                
             }
         }
         for(uint256 xx=0;xx<toDelete.length;xx++){
