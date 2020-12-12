@@ -216,21 +216,4 @@ contract FarmAllowLockedToken is MiningFarm{
         }
     }
 
-    /**
-     * @dev emergency withdraw reward tokens to owner's account if there is some unusual thing happend
-     */
-    function emergencyWithdrawReward(uint256 amount) external onlyOwner{
-        uint256 bal =_rewardToken.balanceOf(address(this));
-        require(bal>=amount,"withdraw amount exceeds the reward balance");
-        _rewardToken.transfer(owner(),amount);
-    }
-    /**
-     * @dev emergency withdraw hashrate tokens to owner's account if there is some unusual thing happend
-     */
-    function emergencyWithdrawSToken(uint256 amount) external onlyOwner{
-        uint256 bal =_stoken.balanceOf(address(this));
-        require(bal>=amount,"withdraw amount exceeds the reward balance");
-        _stoken.transfer(owner(),amount);
-    }
-    
 }
