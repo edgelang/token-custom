@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
-
+pragma experimental ABIEncoderV2;
 
 import "./3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 import "./MiningFarm.sol";
 import "./libraries/TokenUtility.sol";
 
 
-contract FarmAlloweLockedToken is MiningFarm{
+contract FarmAllowLockedToken is MiningFarm{
     using SafeMath for uint256;
     using TokenUtility for *;
-
+    using EnumerableSet for EnumerableSet.AddressSet;
+    
     //if account need to start mining using it's locked tokens,
     //the account should lock this amount first
     uint256 public _miniSeedTokenNeedsForLockedStaking;
@@ -22,8 +24,7 @@ contract FarmAlloweLockedToken is MiningFarm{
 
     constructor(StandardHashrateToken SToken,IERC20Upgradeable  rewardToken,
         uint256 miniStakePeriod,uint startTime,string memory desc)
-        MiningFarm(SToken,rewardToken,miniStakePeriod,startTime,desc,msg.sender) public{
-        
+        MiningFarm(SToken,rewardToken,miniStakePeriod,startTime,desc,msg.sender) public{   
     }
     function depositLockedToMine(uint256 amount) external {
         require(amount>0,"deposit number should greater than 0");

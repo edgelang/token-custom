@@ -69,8 +69,6 @@ contract MiningFarm is Ownable{
         //how many locked STokens the user has provided in all
         uint256 lockedAmount;
 
-        //how many STokens already staked more than two rounds agao, which leads profit every minutes
-        uint256 effectiveAmount;
         //when >0 denotes that reward before this time already update into rewardBalanceInpool
         uint lastUpdateRewardTime;
 
@@ -505,16 +503,19 @@ contract MiningFarm is Ownable{
      */
     function claimAllReward(address account)public{
         uint256 totalMined = getAndUpdateRewardMinedInPool(account);
-        claimAmountOfReward(account,totalMined);
+        claimAmountOfReward(account,totalMined,false);
     }
 
     /**
      * @dev claim amount of reward tokens
      */
-    function claimAmountOfReward(address account,uint256 amount)public{
-        uint256 totalMined = getAndUpdateRewardMinedInPool(account);
-        require(totalMined>=amount,"claim amount should not greater than total mined");
+    function claimAmountOfReward(address account,uint256 amount,bool reCalculate)public{
+        if (reCalculate){
+            getAndUpdateRewardMinedInPool(account);
+        }
         UserInfo storage user = _userInfo[account];
+        require(user.rewardBalanceInpool>=amount,"claim amount should not greater than total mined");
+
         user.rewardBalanceInpool = user.rewardBalanceInpool.sub(amount);
         _safeTokenTransfer(account,amount,_rewardToken);
         _totalRewardInPool = _totalRewardInPool.sub(amount);
