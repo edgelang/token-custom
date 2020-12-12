@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -48,7 +49,7 @@ contract StandardHashrateToken is LinearReleaseToken{
         require(recipient != address(0), "Locked ERC20: transfer to the zero address");
         require(balanceOf(_farmContract)>=amount,"ERC20: transfer amount exceeds balance");
 
-        mapping (uint => uint256) storage records = _timeLockedBalanceRecords[_farmContract];
+        // mapping (uint => uint256) storage records = _timeLockedBalanceRecords[_farmContract];
         mapping (uint => uint256) storage recordsCost = _timeLockedBalanceRecordsCost[_farmContract];
         
         mapping (uint => uint256) storage rcpRecords = _timeLockedBalanceRecords[recipient];

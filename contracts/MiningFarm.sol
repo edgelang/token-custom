@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
@@ -89,6 +90,8 @@ contract MiningFarm is Ownable{
     struct RoundSlotInfo{
         MiningReward reward;//reward info in this period
         uint256 totalStaked;//totalStaked = previous round's totalStaked + this Round's total staked 
+        uint256 stakedLowestWaterMark;//lawest water mark for this slot
+        
         uint256 totalStakedInSlot;//this Round's total staked
         //store addresses set which staked in this slot
         EnumerableSet.AddressSet stakedAddressSet;
@@ -184,8 +187,8 @@ contract MiningFarm is Ownable{
     /**
      * @dev return the mining records of specific day
      */
-    function miningRewardIn(uint day)public returns (address,uint256,uint256){
-        (uint key,uint round) = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+    function miningRewardIn(uint day)public view returns (address,uint256,uint256){
+        uint key = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         RoundSlotInfo memory slot = _roundSlots[key];
         return (slot.reward.lastSubmiter,slot.reward.amount,slot.reward.accumulateAmount);
     }
@@ -193,13 +196,13 @@ contract MiningFarm is Ownable{
     /**
      * @dev return the stake records of specific day
      */
-    function stakeRecord(address account,uint day)public returns (uint,uint256,uint256,uint256,uint256) {
-        (uint key,uint round) = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+    function stakeRecord(address account,uint day)public view returns (uint,uint256,uint256,uint256,uint256) {
+        uint key = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         UserInfo storage user = _userInfo[account];
         StakeRecord storage record = user.stakeInfo[key];
         return (record.timeKey,record.amount,record.lockedAmount,record.withdrawed,record.lockedWithdrawed);
     }
-    function getRewardBalanceInPoolBefore(address account,uint before) public returns(uint256){
+    function getRewardBalanceInPoolBefore(address account,uint before) public view returns(uint256){
         UserInfo storage user = _userInfo[account];
         uint lastUpdate = user.lastUpdateRewardTime;
         uint256 minedTotal = 0;
@@ -224,7 +227,7 @@ contract MiningFarm is Ownable{
     }
 
 
-    function _getRoundSlotInfo(uint timeKey)internal returns(RoundSlotInfo storage){
+    function _getRoundSlotInfo(uint timeKey)internal view returns(RoundSlotInfo storage){
         return _roundSlots[timeKey];
     }
     function _safeTokenTransfer(address to,uint256 amount,IERC20Upgradeable token) internal{
@@ -238,7 +241,7 @@ contract MiningFarm is Ownable{
     function _addMingAccount(address account)internal{
         _miningAccountSet.add(account);
     }
-    function _getMingAccount() internal returns (EnumerableSet.AddressSet memory){
+    function _getMingAccount() internal view returns (EnumerableSet.AddressSet memory){
         return _miningAccountSet;
     }
     function getMiningAccountAt(uint256 ii)internal view returns (address){
@@ -250,7 +253,7 @@ contract MiningFarm is Ownable{
         RoundSlotInfo storage slot = _roundSlots[key];
         //update indexes
         uint maxLast = 0;
-        if (user.stakedTimeIndex.length>1){
+        if (user.stakedTimeIndex.length>0){
             maxLast = user.stakedTimeIndex[user.stakedTimeIndex.length-1];
         }
         slot.totalStakedInSlot = slot.totalStakedInSlot.add(amount);
@@ -260,26 +263,16 @@ contract MiningFarm is Ownable{
             user.stakedTimeIndex.push(key);   
         }
 
-        uint slotMaxLast = 0;
-        if (_roundSlotsIndex.length>1){
-            slotMaxLast = _roundSlotsIndex[_roundSlotsIndex.length-1];
-        }
-        if (slotMaxLast<key){
-            _roundSlotsIndex.push(key);
-            RoundSlotInfo storage previouSlot = _roundSlots[slotMaxLast];
-            slot.totalStaked = previouSlot.totalStaked.add(slot.totalStakedInSlot);
-        }else{
-            slot.totalStaked = slot.totalStaked.add(amount);
-        }
+        _initOrUpdateLowestWaterMarkAndTotalStaked(key,amount);
     }
-    function _getMaxAlreadyMinedTimeKey() internal returns (uint){
-        (uint key,uint round) = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+    function _getMaxAlreadyMinedTimeKey() internal view returns (uint){
+        uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         return key.sub(_miniStakePeriodInSeconds*2);
     }
     /**
      * @dev denote how to calculate the user's remain staked amount for stake record
      */
-    function _getRecordStaked(StakeRecord memory record)internal virtual returns(uint256){
+    function _getRecordStaked(StakeRecord memory record)internal pure virtual returns(uint256){
         return record.amount.sub(record.withdrawed);
     }
     /**
@@ -287,7 +280,7 @@ contract MiningFarm is Ownable{
      * (after,before]
      */
     function _calculateMinedRewardDuringFor(StakeRecord memory record,
-        uint afterTime,uint beforeTime)internal virtual returns(uint256){
+        uint afterTime,uint beforeTime)internal virtual view returns(uint256){
         uint256 remainStaked = _getRecordStaked(record);
         
         if (remainStaked<=0){
@@ -300,9 +293,11 @@ contract MiningFarm is Ownable{
                 //calculate this period of mining reward
                 RoundSlotInfo memory slot = _roundSlots[key];
                 if (slot.reward.amount>0){
-                    mined = mined.add(
-                        slot.reward.amount.mul(remainStaked)
-                        .div(slot.totalStaked));
+                    if (slot.stakedLowestWaterMark!=0){
+                        mined = mined.add(
+                            slot.reward.amount.mul(remainStaked)
+                            .div(slot.stakedLowestWaterMark));
+                    }
                 }
             }
             if (key<=afterTime){
@@ -322,7 +317,7 @@ contract MiningFarm is Ownable{
         
         //if successed let's update the status
         _miningAccountSet.add(account);
-        (uint key,uint round) = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+        uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         UserInfo storage user = _userInfo[account];
         StakeRecord storage record = user.stakeInfo[key];
         //update user's record
@@ -343,22 +338,17 @@ contract MiningFarm is Ownable{
         //deliver reward to 2 rounds agao's stake slot
         //time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         uint time= now.sub(_miniStakePeriodInSeconds*2);
-        (uint key,uint round) = time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+        uint key = time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         depositRewardFromForTime(account,amount,key);
     }
 
     function depositRewardFromForTime(address account,uint256 amount,uint time) public{
         require(amount>0,"deposit number should greater than 0");
         _rewardToken.safeTransferFrom(account,address(this),amount);
-        (uint timeKey,uint round)= time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+        uint timeKey= time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         RoundSlotInfo storage slot = _roundSlots[timeKey];
-        uint slotMaxLast = 0;
-        if (_roundSlotsIndex.length>1){
-            slotMaxLast = _roundSlotsIndex[_roundSlotsIndex.length-1];
-        }
-        if (slotMaxLast<timeKey){
-            _roundSlotsIndex.push(timeKey);
-        }
+        
+        _initOrUpdateLowestWaterMarkAndTotalStaked(timeKey,0);
 
         uint256 accumulate = 0;
         uint256 slotIndex = 0;
@@ -411,10 +401,13 @@ contract MiningFarm is Ownable{
         //we can't change the status for calculating reward before 2 rounds agao
         //because the user already staked full for mining 2 rounds agao
         uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
-
+        uint currentKey = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         uint256 needCost = amount;
         bool updateReward = false;
         bool[] memory toDelete = new bool[](ii);
+        _initOrUpdateLowestWaterMarkAndTotalStaked(currentKey,0);
+        RoundSlotInfo storage currentSlot = _roundSlots[currentKey];
+        uint256 update = 0;
         for (ii;ii>0;ii--){
             if (needCost == 0){
                 break;
@@ -427,14 +420,14 @@ contract MiningFarm is Ownable{
             }
             StakeRecord storage record = user.stakeInfo[timeKey];
             RoundSlotInfo storage slot = _roundSlots[timeKey];
-            uint256 remain = record.amount.sub(record.withdrawed);
-            uint256 update = remain;
-            if (needCost<=remain){
-                record.withdrawed = needCost;
+            update = record.amount.sub(record.withdrawed);
+            if (needCost<=update){
+                record.withdrawed = record.withdrawed.add(needCost);
                 update = needCost;
                 needCost = 0;
             }else{
-                needCost = needCost.sub(remain);
+                needCost = needCost.sub(update);
+                //withdrawed all of this record
                 record.withdrawed = record.amount;
                 //record maybe can be delete, withdrawed all
                 if (_getRecordStaked(record)==0){
@@ -444,8 +437,15 @@ contract MiningFarm is Ownable{
             }
             if (timeKey > alreadyMinedTimeKey){
                 slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update);
-                // uint nearMiningTKey = alreadyMinedTimeKey.add(_miniStakePeriodInSeconds);
-                slot.totalStaked =slot.totalStaked.sub(amount);
+                slot.totalStaked = slot.totalStaked.sub(amount);
+            }
+            if (update>0 && timeKey<currentKey){
+                if (currentSlot.stakedLowestWaterMark.sub(update)>0){
+                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update);
+                }else{
+                    currentSlot.stakedLowestWaterMark = 0;
+                }
+                
             }
         }
 
@@ -458,6 +458,30 @@ contract MiningFarm is Ownable{
         _safeTokenTransfer(account,amount,_stoken);
         user.amount = user.amount.sub(amount);
         emit Withdraw(account,amount); 
+    }
+
+    function _initOrUpdateLowestWaterMarkAndTotalStaked(uint nextKey,uint256 amount)internal{
+        uint slotMaxLast = 0;
+        RoundSlotInfo storage slot = _roundSlots[nextKey];
+        if (_roundSlotsIndex.length>0){
+            slotMaxLast = _roundSlotsIndex[_roundSlotsIndex.length-1];
+        }
+        if (slotMaxLast<nextKey){
+            _roundSlotsIndex.push(nextKey);
+            if (slotMaxLast!=0){
+                //we have previous ones
+                RoundSlotInfo storage previouSlot = _roundSlots[slotMaxLast];
+                slot.totalStaked = previouSlot.totalStaked.add(amount);
+                //firsttime init stakedLowestWaterMark
+                slot.stakedLowestWaterMark = previouSlot.totalStaked;
+            }else{
+                //have no previous one
+                slot.totalStaked = slot.totalStaked.add(amount);
+                slot.stakedLowestWaterMark = 0;
+            }
+        }else{
+            slot.totalStaked = slot.totalStaked.add(amount);
+        }
     }
 
     function getAndUpdateRewardMinedInPool(address account) public returns (uint256){

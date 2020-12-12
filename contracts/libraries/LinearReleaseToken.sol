@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
 import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
@@ -86,8 +87,10 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
                     freeTime = max.add(1);
                 }
             }
-            _balanceFreeTimeKeys[account].push(freeTime);
-            _timeLockedBalanceRecords[account][freeTime] = _timeLockedBalanceRecords[account][freeTime].add(amount);
+            uint[] storage keys = _balanceFreeTimeKeys[account];
+            keys.push(freeTime);
+            mapping (uint => uint256) storage records = _timeLockedBalanceRecords[account];
+            records[freeTime] = records[freeTime].add(amount);
             _timeLockedBalances[account] = _timeLockedBalances[account].add(amount);  
             _totalSupplyReleaseByTimeLock = _totalSupplyReleaseByTimeLock.add(amount);  
         }
@@ -118,25 +121,29 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         uint256 allFreed = 0;
         mapping (uint => uint256) storage records = _timeLockedBalanceRecords[account];
         mapping (uint => uint256) storage recordsCost = _timeLockedBalanceRecordsCost[account];
+        uint freeTime;
+        uint256 lockedBal;
+        uint256 alreadyCost;
+        uint256 freeAmount;
         for (uint256 ii=0; ii < keys.length; ++ii){
             //_lockUTimenitPerSeconds:days:25*7,rounds:25
-            uint freeTime = keys[ii];
-            uint256 lockedBal = records[freeTime];
-            uint256 alreadyCost = recordsCost[freeTime];
-            uint256 freeAmount = 0;
+            freeTime = keys[ii];
+            lockedBal = records[freeTime];
+            alreadyCost = recordsCost[freeTime];
+            freeAmount = 0;
             if (freeTime<=now){
                 freeAmount = lockedBal;
             }else{
                 //to calculate how much rounds still remain
-                uint256 roundPerDay = _lockTime.div(_lockRounds);
+                uint256 timePerRound = _lockTime.div(_lockRounds);
                 uint start = freeTime - _lockTime * _lockTimeUnitPerSeconds;
                 uint passed = now - start;
-                uint passedRound = passed.div(roundPerDay * _lockTimeUnitPerSeconds);
+                uint passedRound = passed.div(timePerRound * _lockTimeUnitPerSeconds);
                 freeAmount = lockedBal.mul(passedRound).div(_lockRounds);
             }
-            allFreed.add(freeAmount.sub(alreadyCost));
+            allFreed = allFreed.add(freeAmount.sub(alreadyCost));
         }
-        if (allFreed < lockedBalance){
+        if (allFreed <= lockedBalance){
             return balance.sub(lockedBalance).add(allFreed);
         }
         return balance;

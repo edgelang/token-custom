@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
 import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
@@ -56,7 +57,7 @@ library TokenUtility{
      * @dev cost amount of token among balanceFreeTime Keys indexed in records with recordCostRecords
      * return cost keys and cost values one to one 
      */
-    function calculateCostLocked(mapping (uint => uint256) storage records,uint256 toCost,uint[] memory keys,mapping (uint => uint256) storage recordsCost)internal returns(uint256,uint256[] memory){
+    function calculateCostLocked(mapping (uint => uint256) storage records,uint256 toCost,uint[] memory keys,mapping (uint => uint256) storage recordsCost)internal view returns(uint256,uint256[] memory){
         uint256 lockedFreeToMove = 0;
         uint256[] memory cost = new uint256[](keys.length);
         for (uint256 ii=0; ii < keys.length; ++ii){
@@ -86,14 +87,14 @@ library TokenUtility{
      * @dev a method to get time-key from a time parameter
      * returns time-key and round
      */
-    function getTimeKey(uint time,uint256 _farmStartedTime,uint256 _miniStakePeriodInSeconds)internal returns (uint,uint){
+    function getTimeKey(uint time,uint256 _farmStartedTime,uint256 _miniStakePeriodInSeconds)internal pure returns (uint){
         require(time>_farmStartedTime,"time should larger than all thing stated time");
         //get the end time of period
         uint round = time.sub(_farmStartedTime).div(_miniStakePeriodInSeconds);
         uint end = _farmStartedTime.add(round.mul(_miniStakePeriodInSeconds));
         if (end < time){
-            return (end.add(_miniStakePeriodInSeconds),round.add(1));
+            return end.add(_miniStakePeriodInSeconds);
         }
-        return (end,round);
+        return end;
     }
 }

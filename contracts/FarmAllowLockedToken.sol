@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
 
@@ -25,11 +26,11 @@ contract FarmAlloweLockedToken is MiningFarm{
         
     }
     function depositLockedToMine(uint256 amount) external {
+        require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         uint256 bal = _stoken.linearLockedBalanceOf(account);
         require(bal>=amount,"deposit locked amount exceeds locked balance");
-        require(amount>0,"deposit number should greater than 0");
-
+        
         //first try to transfer locked amount from sender to this contract
         (uint[] memory freeTimeKey,uint256[] memory lockedArray) = _stoken.transferLockedTo(address(this),amount);
         uint[] storage stakedLockedBalanceFreeTime = _stakedLockedBalanceFreeTimeKeys[account];
@@ -38,7 +39,7 @@ contract FarmAlloweLockedToken is MiningFarm{
             uint _timeKey = freeTimeKey[ii];
             _stakedLockedRecords[account][_timeKey] = 
             _stakedLockedRecords[account][_timeKey].add(lockedArray[ii]);
-            if (stakedLockedBalanceFreeTime.length>1){
+            if (stakedLockedBalanceFreeTime.length>0){
                 uint max = stakedLockedBalanceFreeTime[stakedLockedBalanceFreeTime.length-1];
                 if (_timeKey > max){
                     stakedLockedBalanceFreeTime.push(_timeKey);
@@ -50,7 +51,7 @@ contract FarmAlloweLockedToken is MiningFarm{
         }
         //if successed let's update the status
         _addMingAccount(account);
-        (uint key,uint round) = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+        uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         UserInfo storage user = _userInfo[account];
         StakeRecord storage record = user.stakeInfo[key];
         //update user's record
@@ -67,7 +68,7 @@ contract FarmAlloweLockedToken is MiningFarm{
     /**
      * @dev override the super calculate method add locked remain amount
      */
-    function _getRecordStaked(StakeRecord memory record)internal override returns(uint256){
+    function _getRecordStaked(StakeRecord memory record)internal pure override returns(uint256){
         return super._getRecordStaked(record)
                 .add(record.lockedAmount.sub(record.lockedWithdrawed));
     }
