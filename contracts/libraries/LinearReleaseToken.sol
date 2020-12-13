@@ -141,10 +141,10 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
                 uint passedRound = passed.div(timePerRound * _lockTimeUnitPerSeconds);
                 freeAmount = lockedBal.mul(passedRound).div(_lockRounds);
             }
-            allFreed = allFreed.add(freeAmount.sub(alreadyCost));
+            allFreed = allFreed.add(freeAmount.sub(alreadyCost,"already cost exceeds freeamount"));
         }
         if (allFreed <= lockedBalance){
-            return balance.sub(lockedBalance).add(allFreed);
+            return balance.sub(lockedBalance.sub(allFreed,"allFreed exceeds lockedBalance"),"balance limited");
         }
         return balance;
     }
@@ -234,6 +234,7 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         // uint passed;
         // uint passedRound;
         uint256 freeToMove;
+        uint256 toBeCost = remain;
         for (uint256 ii=0; ii < keys.length; ++ii){
             //_lockTimeUnitPerSeconds:days:25*7,rounds:25
             if (remain==0){
@@ -250,7 +251,7 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
                     (now - (keys[ii] - _lockTime * _lockTimeUnitPerSeconds))
                     .div(_lockTime.div(_lockRounds) * _lockTimeUnitPerSeconds)).div(_lockRounds);
             }
-            freeToMove = freeAmount.sub(recordsCost[keys[ii]]);
+            freeToMove = freeAmount.sub(recordsCost[keys[ii]],"already cost exceeds freeamount");
             allFreed = allFreed.add(freeToMove);
             if (freeToMove >= remain){
                 cost[ii] = remain;
@@ -262,18 +263,17 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         }
 
 
-        require(remain <= allFreed,"user has locked amount,sending amounts exceeds the free amounts");
+        require(toBeCost <= allFreed,"user has locked amount,sending amounts exceeds the free amounts");
         //passed lock amount striction check,need to update cost,if not passed, we shouldn;t update the cost array
 
         for (uint256 ii=0; ii < keys.length; ++ii){
             uint freeTime = keys[ii];
             uint256 moreCost = cost[ii];
-            uint256 alreadyCost = recordsCost[freeTime];
-            recordsCost[freeTime] = alreadyCost.add(moreCost);
+            recordsCost[freeTime] = recordsCost[freeTime].add(moreCost);
         }
 
-        _timeLockedBalances[account] = _timeLockedBalances[account].sub(remain);
-        _totalReleasedSupplyReleaseByTimeLock = _totalReleasedSupplyReleaseByTimeLock.add(remain);
+        _timeLockedBalances[account] = _timeLockedBalances[account].sub(toBeCost);
+        _totalReleasedSupplyReleaseByTimeLock = _totalReleasedSupplyReleaseByTimeLock.add(toBeCost);
     }
 
     
