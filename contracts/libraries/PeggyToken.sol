@@ -28,13 +28,14 @@ contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
     // INITIALIZATION DATA
     bool public initialized;
     
-
     /**
      * @dev statistic data total supply which was locked by compliance officer
      */
     uint256 private _totalSupplyLocked;
 
+    string public icon;
 
+    string public meta;
     /**
      * @dev sets 0 initials tokens, the owner, and the supplyController.
      * this serves as the constructor for the proxy but compiles to the
@@ -47,6 +48,13 @@ contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
         devaddr = owner;
 
         initialized = true;
+    }
+
+    function changeIcon(string memory value) public onlyOwner{
+        icon = value;
+    }
+    function changeMeta(string memory value) public onlyOwner{
+        meta = value;
     }
 
     function burn(uint value) override public onlyOwner {
