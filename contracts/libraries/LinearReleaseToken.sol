@@ -353,21 +353,29 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         mapping (uint => uint256) storage recordsCost = _timeLockedBalanceRecordsCost[account];
         (uint256 lockedFreeToMove,uint256[] memory cost) = records.calculateCostLocked(amount,keys,recordsCost);
         require(amount <= lockedFreeToMove,"sending locked amounts exceeds the locked amounts");
-        uint256 accTimeLockedBalance = _timeLockedBalances[account];
-        uint256 rcpTimeLockedBalance = _timeLockedBalances[recipient];
-        _timeLockedBalances[account] = accTimeLockedBalance.sub(amount, "Locked ERC20: transfer amount exceeds locked balance");
+        
+        _timeLockedBalances[account] = _timeLockedBalances[account].sub(amount, "Locked ERC20: transfer amount exceeds locked balance");
         _transferDirect(account,recipient,amount);
-        _timeLockedBalances[recipient] = rcpTimeLockedBalance.add(amount);
+        _timeLockedBalances[recipient] = _timeLockedBalances[recipient].add(amount);
+        uint[] storage rcpKeys = _balanceFreeTimeKeys[recipient];
+        uint rcpMax = 0;
+        if (rcpKeys.length>0){
+            rcpMax = rcpKeys[rcpKeys.length-1];
+        }
 
         mapping (uint => uint256) storage rcpRecords = _timeLockedBalanceRecords[recipient];
         uint[] memory index = new uint[](keys.length);
         for (uint256 ii=0; ii < keys.length; ++ii){
             uint freeTime = keys[ii];
             index[ii] = freeTime;
+            if (freeTime>rcpMax){
+                rcpKeys.push(freeTime);
+                rcpMax = freeTime;
+            }
             uint256 moreCost = cost[ii];
 
-             //update sender's locked recordsCost
-            recordsCost[freeTime] = recordsCost[freeTime].add(moreCost);
+             //don't update sender's locked recordsCost but decrease it's lockedbal directly
+            records[freeTime] = records[freeTime].sub(moreCost,"moreCost>records[freeTime]");
             //update recipient's locked records
             rcpRecords[freeTime] = rcpRecords[freeTime].add(moreCost);
         }
