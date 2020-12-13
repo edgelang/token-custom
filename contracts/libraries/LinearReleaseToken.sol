@@ -141,10 +141,10 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
                 uint passedRound = passed.div(timePerRound * _lockTimeUnitPerSeconds);
                 freeAmount = lockedBal.mul(passedRound).div(_lockRounds);
             }
-            allFreed = allFreed.add(freeAmount.sub(alreadyCost,"already cost exceeds freeamount"));
+            allFreed = allFreed.add(freeAmount.sub(alreadyCost,"alreadyCost>freeAmount"));
         }
         if (allFreed <= lockedBalance){
-            return balance.sub(lockedBalance.sub(allFreed,"allFreed exceeds lockedBalance"),"balance limited");
+            return balance.sub(lockedBalance.sub(allFreed,"allFreed>lockedBalance"),"balance limited");
         }
         return balance;
     }
@@ -211,7 +211,7 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
 
         //following step indicates that user want to send part of locked balances which was already unlocked during passed time
         //remain should be no greater than freed amounts
-        uint256 remain = amount.sub(totalFree);
+        uint256 remain = amount.sub(totalFree,"totalFree>amount");
         _updateCostLockedAlreadyFreed(account, remain);
 
     }
@@ -251,14 +251,14 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
                     (now - (keys[ii] - _lockTime * _lockTimeUnitPerSeconds))
                     .div(_lockTime.div(_lockRounds) * _lockTimeUnitPerSeconds)).div(_lockRounds);
             }
-            freeToMove = freeAmount.sub(recordsCost[keys[ii]],"already cost exceeds freeamount");
+            freeToMove = freeAmount.sub(recordsCost[keys[ii]],"already cost > freeAmount");
             allFreed = allFreed.add(freeToMove);
             if (freeToMove >= remain){
                 cost[ii] = remain;
                 remain = 0;
             }else{
                 cost[ii] = freeToMove;
-                remain = remain.sub(freeToMove);
+                remain = remain.sub(freeToMove,"freeToMove>remain");
             }
         }
 
@@ -272,7 +272,7 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
             recordsCost[freeTime] = recordsCost[freeTime].add(moreCost);
         }
 
-        _timeLockedBalances[account] = _timeLockedBalances[account].sub(toBeCost);
+        _timeLockedBalances[account] = _timeLockedBalances[account].sub(toBeCost,"toBeCost>_timeLockedBalances");
         _totalReleasedSupplyReleaseByTimeLock = _totalReleasedSupplyReleaseByTimeLock.add(toBeCost);
     }
 

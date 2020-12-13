@@ -69,7 +69,7 @@ library TokenUtility{
             uint256 lockedBal = records[freeTime];
             uint256 alreadyCost = recordsCost[freeTime];
             
-            uint256 lockedToMove = lockedBal.sub(alreadyCost);
+            uint256 lockedToMove = lockedBal.sub(alreadyCost,"alreadyCost>lockedBal");
 
             lockedFreeToMove = lockedFreeToMove.add(lockedToMove);
             if (lockedToMove >= toCost){
@@ -77,7 +77,7 @@ library TokenUtility{
                 toCost = 0;
             }else{
                 cost[ii] = lockedToMove;
-                toCost = toCost.sub(lockedToMove);
+                toCost = toCost.sub(lockedToMove,"lockedToMove>toCost");
             }
         }
         return (lockedFreeToMove,cost);

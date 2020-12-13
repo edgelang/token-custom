@@ -76,7 +76,7 @@ contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
 
     function unLockAccount(address account) public onlyOwner {
         uint256 bal = balanceOf(account);
-        _totalSupplyLocked = _totalSupplyLocked.sub(bal);
+        _totalSupplyLocked = _totalSupplyLocked.sub(bal,"bal>_totalSupplyLocked");
         _lockMap[account] = _unLockMagicNum;
         emit UnLock(account,bal);
     }

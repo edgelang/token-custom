@@ -271,7 +271,7 @@ contract MiningFarm is Ownable{
      * @dev denote how to calculate the user's remain staked amount for stake record
      */
     function _getRecordStaked(StakeRecord memory record)internal pure virtual returns(uint256){
-        return record.amount.sub(record.withdrawed);
+        return record.amount.sub(record.withdrawed,"withdrawed>amount");
     }
     /**
      * @dev calculate mined reward during after and before time, from the stake record
@@ -418,13 +418,13 @@ contract MiningFarm is Ownable{
             }
             StakeRecord storage record = user.stakeInfo[timeKey];
             RoundSlotInfo storage slot = _roundSlots[timeKey];
-            update = record.amount.sub(record.withdrawed);
+            update = record.amount.sub(record.withdrawed,"withdrawed>amount");
             if (needCost<=update){
                 record.withdrawed = record.withdrawed.add(needCost);
                 update = needCost;
                 needCost = 0;
             }else{
-                needCost = needCost.sub(update);
+                needCost = needCost.sub(update,"update>needCost");
                 //withdrawed all of this record
                 record.withdrawed = record.amount;
                 //record maybe can be delete, withdrawed all
@@ -434,11 +434,11 @@ contract MiningFarm is Ownable{
                 }
             }
             if (timeKey > alreadyMinedTimeKey){
-                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update);
-                slot.totalStaked = slot.totalStaked.sub(amount);
+                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"update>totalStakedInSlot");
+                slot.totalStaked = slot.totalStaked.sub(amount,"amount>totalStaked");
             }
             if (update>0 && timeKey<currentKey){
-                if (currentSlot.stakedLowestWaterMark.sub(update)>0){
+                if (update<=currentSlot.stakedLowestWaterMark){
                     currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update);
                 }else{
                     currentSlot.stakedLowestWaterMark = 0;
@@ -454,7 +454,7 @@ contract MiningFarm is Ownable{
             }
         }
         _safeTokenTransfer(account,amount,_stoken);
-        user.amount = user.amount.sub(amount);
+        user.amount = user.amount.sub(amount,"amount>user.amount");
         emit Withdraw(account,amount); 
     }
 
@@ -516,9 +516,9 @@ contract MiningFarm is Ownable{
         UserInfo storage user = _userInfo[account];
         require(user.rewardBalanceInpool>=amount,"claim amount should not greater than total mined");
 
-        user.rewardBalanceInpool = user.rewardBalanceInpool.sub(amount);
+        user.rewardBalanceInpool = user.rewardBalanceInpool.sub(amount,"amount>rewardBalanceInpool");
         _safeTokenTransfer(account,amount,_rewardToken);
-        _totalRewardInPool = _totalRewardInPool.sub(amount);
+        _totalRewardInPool = _totalRewardInPool.sub(amount,"amount>_totalRewardInPool");
         emit Claim(account,amount);
     }
 

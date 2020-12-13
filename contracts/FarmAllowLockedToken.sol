@@ -71,7 +71,7 @@ contract FarmAllowLockedToken is MiningFarm{
      */
     function _getRecordStaked(StakeRecord memory record)internal pure override returns(uint256){
         return super._getRecordStaked(record)
-                .add(record.lockedAmount.sub(record.lockedWithdrawed));
+                .add(record.lockedAmount.sub(record.lockedWithdrawed,"lockedWithdrawed>lockedAmount"));
     }
     /**
      * @dev return the staked total number of SToken
@@ -142,13 +142,13 @@ contract FarmAllowLockedToken is MiningFarm{
             }
             StakeRecord storage record = user.stakeInfo[timeKey];
             RoundSlotInfo storage slot = _getRoundSlotInfo(timeKey);
-            update = record.lockedAmount.sub(record.lockedWithdrawed);
+            update = record.lockedAmount.sub(record.lockedWithdrawed,"lockedWithdrawed>lockedAmount");
             if (needCost<=update){
                 record.lockedWithdrawed = record.lockedWithdrawed.add(needCost);
                 update = needCost;
                 needCost = 0;
             }else{
-                needCost = needCost.sub(update);
+                needCost = needCost.sub(update,"update > needCost");
                 record.lockedWithdrawed = record.lockedAmount;
                 //record maybe can be delete, withdrawed all
                 if (_getRecordStaked(record)==0){
@@ -157,12 +157,12 @@ contract FarmAllowLockedToken is MiningFarm{
                 }
             }
             if (timeKey > alreadyMinedTimeKey){
-                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update);
-                slot.totalStaked =slot.totalStaked.sub(amount);
+                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"update > totalStakedInSlot");
+                slot.totalStaked =slot.totalStaked.sub(amount,"amount > totalStaked");
             }
             if (update>0 && timeKey<currentKey){
-                if (currentSlot.stakedLowestWaterMark.sub(update)>0){
-                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update);
+                if (update<=currentSlot.stakedLowestWaterMark){
+                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update,"amount > stakedLowestWaterMark");
                 }else{
                     currentSlot.stakedLowestWaterMark = 0;
                 }
@@ -177,7 +177,7 @@ contract FarmAllowLockedToken is MiningFarm{
         }
 
         _safeLockedSTokenTransfer(user,account,amount);
-        user.lockedAmount = user.lockedAmount.sub(amount);
+        user.lockedAmount = user.lockedAmount.sub(amount,"amount > lockedAmount");
         emit Withdraw(account,amount); 
     }
 
