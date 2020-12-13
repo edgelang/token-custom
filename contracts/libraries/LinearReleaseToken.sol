@@ -57,6 +57,8 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
      *
      */
     mapping (address => uint[]) public _balanceFreeTimeKeys;
+    
+    mapping (address => mapping (bytes32 => uint256)) _balanceFreeTimeKeysIndex;
 
     mapping(address=>mapping(address=>uint256)) _lockedAllowances;
 
@@ -75,20 +77,44 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         _lockTimeUnitPerSeconds = 86400;//initial:1 day
     }
 
+    function _timeKeysPush(address account,uint timeKey)internal returns(bool){
+        if (!_timeKeysContains(account,timeKey)){
+            _balanceFreeTimeKeys[account].push(timeKey);
+            _balanceFreeTimeKeysIndex[account][bytes32(timeKey)] = _balanceFreeTimeKeys[account].length;
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    function _timeKeysContains(address account,uint timeKey)internal returns(bool){
+        return _balanceFreeTimeKeysIndex[account][bytes32(timeKey)]!=0;
+    }
+    function _timeKeysRemove(address account,uint timeKey)internal returns(bool){
+        uint256 valueIndex = _balanceFreeTimeKeysIndex[account][bytes32(timeKey)];
+        if (valueIndex!=0){
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = _balanceFreeTimeKeys[account].length - 1;
+
+            uint lastvalue = _balanceFreeTimeKeys[account][lastIndex];
+
+            _balanceFreeTimeKeys[account][toDeleteIndex] = lastvalue;
+            _balanceFreeTimeKeysIndex[account][bytes32(lastvalue)] = toDeleteIndex+1;
+            _balanceFreeTimeKeys[account].pop();
+            delete _balanceFreeTimeKeysIndex[account][bytes32(timeKey)];
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     function mintWithTimeLock(address account, uint256 amount) public virtual onlyOwner{
         require(hasRole(MINTER_ROLE, _msgSender()), "LinearReleaseToken: must have minter role to mint");
         require(account != address(0), "ERC20: mint to the zero address");
         if (_lockTime>0){
             uint freeTime = now + _lockTime * _lockTimeUnitPerSeconds;
-            uint[] memory arr = _balanceFreeTimeKeys[account];
-            if (arr.length >0 ){
-                uint max = arr[arr.length-1];
-                if (freeTime <= max){
-                    freeTime = max.add(1);
-                }
-            }
-            uint[] storage keys = _balanceFreeTimeKeys[account];
-            keys.push(freeTime);
+            _timeKeysPush(account, freeTime);
+
             mapping (uint => uint256) storage records = _timeLockedBalanceRecords[account];
             records[freeTime] = records[freeTime].add(amount);
             _timeLockedBalances[account] = _timeLockedBalances[account].add(amount);  
@@ -303,7 +329,8 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         for (uint256 ii=0; ii < keys.length; ++ii){
             uint shouldClear = toBeClear[ii];
             if (shouldClear>1){
-                delete _balanceFreeTimeKeys[account][ii];
+                uint timeKey = keys[ii];
+                _timeKeysRemove(account, timeKey);
             }
         }
         return cleared;
@@ -357,27 +384,20 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         _timeLockedBalances[account] = _timeLockedBalances[account].sub(amount, "Locked ERC20: transfer amount exceeds locked balance");
         _transferDirect(account,recipient,amount);
         _timeLockedBalances[recipient] = _timeLockedBalances[recipient].add(amount);
-        uint[] storage rcpKeys = _balanceFreeTimeKeys[recipient];
-        uint rcpMax = 0;
-        if (rcpKeys.length>0){
-            rcpMax = rcpKeys[rcpKeys.length-1];
-        }
-
+        
         mapping (uint => uint256) storage rcpRecords = _timeLockedBalanceRecords[recipient];
         uint[] memory index = new uint[](keys.length);
         for (uint256 ii=0; ii < keys.length; ++ii){
             uint freeTime = keys[ii];
             index[ii] = freeTime;
-            if (freeTime>rcpMax){
-                rcpKeys.push(freeTime);
-                rcpMax = freeTime;
-            }
             uint256 moreCost = cost[ii];
-
-             //don't update sender's locked recordsCost but decrease it's lockedbal directly
-            records[freeTime] = records[freeTime].sub(moreCost,"moreCost>records[freeTime]");
-            //update recipient's locked records
-            rcpRecords[freeTime] = rcpRecords[freeTime].add(moreCost);
+            if (moreCost>0){
+                _timeKeysPush(recipient, freeTime);
+                //don't update sender's locked recordsCost but decrease it's lockedbal directly
+                records[freeTime] = records[freeTime].sub(moreCost,"moreCost>records[freeTime]");
+                //update recipient's locked records
+                rcpRecords[freeTime] = rcpRecords[freeTime].add(moreCost);
+            }    
         }
         emit LockedTransfer(account,recipient,amount);
         return (index,cost);
