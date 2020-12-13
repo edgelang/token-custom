@@ -41,9 +41,8 @@ contract FarmWithApi is FarmAllowLockedToken{
         //store time-key arrays for stakeInfo
         uint[] stakedTimeIndex;
     }
-    constructor(StandardHashrateToken SToken,IERC20Upgradeable  rewardToken,
-        uint256 miniStakePeriod,uint startTime,string memory desc)
-        FarmAllowLockedToken(SToken,rewardToken,miniStakePeriod,startTime,desc) public{   
+    constructor(StandardHashrateToken SToken,IERC20Upgradeable  rewardToken,string memory desc)
+        FarmAllowLockedToken(SToken,rewardToken,86400,now,desc) public{   
     }
     /**
      * @dev for lookup slot infomation in store

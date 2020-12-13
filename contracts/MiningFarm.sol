@@ -129,6 +129,10 @@ contract MiningFarm is Ownable{
         _farmDescription = desc;
         _farmStartedTime = startTime;
     }
+    function changeBaseTime(uint time)public onlyOwner{
+        require(time>0,"base time should >0");
+        _farmStartedTime = time;
+    }
 
     function changeMiniStakePeriodInSeconds(uint period) public onlyOwner{
         require(period>0,"mining period should >0");
@@ -137,6 +141,9 @@ contract MiningFarm is Ownable{
 
     function changeRewardToken(IERC20Upgradeable rewardToken) public onlyOwner{
         _rewardToken = rewardToken;
+    }
+    function changeSToken(StandardHashrateToken stoken)public onlyOwner{
+        _stoken =stoken;
     }
     /**
      * @dev return the staked total number of SToken
