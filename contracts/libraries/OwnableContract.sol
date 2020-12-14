@@ -53,6 +53,12 @@ contract OwnableContract is Initializable, ContextUpgradeable {
         return _owner;
     }
     /**
+     * @dev confirms to BEP20
+     */
+    function getOwner() external view returns (address){
+        return _owner;
+    }
+    /**
      * @dev Modifier throws if called by any account other than the pendingOwner.
      */
     modifier onlyPendingOwner() {
