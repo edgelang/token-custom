@@ -87,7 +87,7 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         }
     }
 
-    function _timeKeysContains(address account,uint timeKey)internal returns(bool){
+    function _timeKeysContains(address account,uint timeKey)internal view returns(bool){
         return _balanceFreeTimeKeysIndex[account][bytes32(timeKey)]!=0;
     }
     function _timeKeysRemove(address account,uint timeKey)internal returns(bool){

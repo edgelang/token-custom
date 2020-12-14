@@ -223,7 +223,7 @@ contract MiningFarm is Ownable{
         }
         return minedTotal;
     }
-    function getTotalRewardBalanceInPool(address account) public returns (uint256){
+    function getTotalRewardBalanceInPool(address account) public view returns (uint256){
         uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
         UserInfo memory user = _userInfo[account];
         uint256 old = user.rewardBalanceInpool;
