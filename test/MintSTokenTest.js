@@ -12,7 +12,7 @@ contract("BTCST", async accounts=>{
     let gtotal=0,gtimeLocked=0,gtotalReleased=0;
     let gAccountsInfo = [];
     it("linear mint token function test",async ()=>{
-        return;
+        //return;
         await init();
         await testMintMintLockedWith(10000,2000);
         await testMintMintLockedWith(10300,3200);
@@ -20,7 +20,7 @@ contract("BTCST", async accounts=>{
         await transferFrom(0,8,getAccountInfo(0).balance);
     });
     it("test getFreeToTransferAmount transfer locked tokens after release time",async ()=>{
-        return;
+        //return;
         await init();
         await mintWith(0,10000);
         await mintWith(1,20000);
@@ -35,7 +35,7 @@ contract("BTCST", async accounts=>{
         await transferFrom(1,8,getAccountInfo(1).balance);
     });
     it("check linear unlock amount view",async()=>{
-        return;
+        //return;
         await init();
         await mintWith(0,10000);
         let freedMint = 20000;
@@ -70,7 +70,7 @@ contract("BTCST", async accounts=>{
         await transferFrom(1,8,getAccountInfo(1).balance);
     });
     it("locked token transfer:testSendMoreThanFreedAmount",async()=>{
-        return;
+        //return;
         await init();
         let lockedTotal = 100;
         await mintLockedWith(6,lockedTotal);
@@ -86,7 +86,7 @@ contract("BTCST", async accounts=>{
         assert.equal(freeToMove.toNumber(),0);
     });
     it("locked token transfer:testSendAllFreedAmount",async()=>{
-        return;
+        //return;
         await init();
         let amount = 100;
         await mintWith(1,amount/2);
