@@ -17,10 +17,14 @@ module.exports = async function (deployer) {
   let contract = await BTCST.at(btcst.address);
   let res = await contract.initialized();
   console.log("btcst initialized:"+res);
+
   const rewardToken = await deployer.deploy(MockERC20,"Bitcoin Mock","MBTC",10000);
-  console.log("rewardToken deployed");
-  const farm = await deployer.deploy(Farm,btcst.address,rewardToken.address,"a testing famr");
-  console.log("farm deployed");
+  console.log("mock rewardToken deployed at:"+rewardToken.address);
+  const farm = await deployer.deploy(Farm,btcst.address,rewardToken.address,"a testing farm");
+  console.log("farm deployed at:"+farm.address);
+  await btcst.changeFarmContract(farm.address);
+  let farmContract = await btcst._farmContract();
+  console.log("farmContract address in btcst changed to:"+farmContract);
   console.log("migration finished");
 
   // const upgraded = await upgradeProxy(instance.address,Token_V2,{deployer});
