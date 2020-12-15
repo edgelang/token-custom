@@ -77,6 +77,13 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         _lockTimeUnitPerSeconds = 86400;//initial:1 day
     }
 
+    /**
+     * @dev See {locked allowance}.
+     */
+    function allowanceLocked(address owner, address spender) public view virtual returns (uint256) {
+        return _lockedAllowances[owner][spender];
+    }
+
     function _timeKeysPush(address account,uint timeKey)internal returns(bool){
         if (!_timeKeysContains(account,timeKey)){
             _balanceFreeTimeKeys[account].push(timeKey);
