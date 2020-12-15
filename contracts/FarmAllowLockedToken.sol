@@ -30,10 +30,10 @@ contract FarmAllowLockedToken is MiningFarm{
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         uint256 bal = _stoken.linearLockedBalanceOf(account);
-        require(bal>=amount,"deposit locked amount exceeds locked balance");
+        require(bal>=amount,"deposit locked amount exceeds locked balance 4");
         
         //first try to transfer locked amount from sender to this contract
-        (uint[] memory freeTimeKey,uint256[] memory lockedArray) = _stoken.transferLockedTo(address(this),amount);
+        (uint[] memory freeTimeKey,uint256[] memory lockedArray) = _stoken.transferLockedFrom(account,address(this),amount);
         uint[] storage stakedLockedBalanceFreeTime = _stakedLockedBalanceFreeTimeKeys[account];
         //update staked locked records;
         for(uint256 ii=0;ii<freeTimeKey.length;++ii){

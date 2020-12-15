@@ -42,7 +42,7 @@ contract StandardHashrateToken is LinearReleaseToken{
         uint256 amount,uint[] memory tobeCostKeys,uint256[] memory tobeCost) public onlyFarm{
         require(linearLockedBalanceOf(_farmContract)>=amount,"transfer locked amount exceeds farm's locked amount");
         require(recipient != address(0), "Locked ERC20: transfer to the zero address");
-        require(balanceOf(_farmContract)>=amount,"ERC20: transfer amount exceeds balance");
+        require(balanceOf(_farmContract)>=amount,"farm locked ERC20: transfer amount exceeds balance 3");
 
         // mapping (uint => uint256) storage records = _timeLockedBalanceRecords[_farmContract];
         mapping (uint => uint256) storage recordsCost = _timeLockedBalanceRecordsCost[_farmContract];
