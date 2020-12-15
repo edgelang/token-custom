@@ -343,11 +343,10 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
         return cleared;
     }
 
-    function transferLockedFrom(address from,uint256 amount) public nonReentrant virtual returns(uint[] memory,uint256[] memory) {
-        address to = _msgSender();
+    function transferLockedFrom(address from,address to,uint256 amount) public nonReentrant virtual returns(uint[] memory,uint256[] memory) {
         (uint[] memory freeTimeIndex,uint256[] memory locked) = _transferLocked(from, to, amount);
-        _approveLocked(from,to,
-            _lockedAllowances[from][to]
+        _approveLocked(from,_msgSender(),
+            _lockedAllowances[from][_msgSender()]
             .sub(amount,"Locked ERC20: transfer locked amount exceeds allowance"));
         return (freeTimeIndex,locked);
     }
@@ -378,8 +377,8 @@ contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
     function _transferLocked(address account,address recipient,uint256 amount) internal virtual returns(uint[] memory,uint256[] memory){
         require(account != address(0), "Locked ERC20: transfer from the zero address");
         require(recipient != address(0), "Locked ERC20: transfer to the zero address");
-        require(balanceOf(account)>=amount,"ERC20: transfer amount exceeds balance");
-        require(linearLockedBalanceOf(account)>=amount,"transfer locked amount exceeds farm's locked amount");
+        require(balanceOf(account)>=amount,"Locked ERC20: transfer amount exceeds balance 1");
+        require(linearLockedBalanceOf(account)>=amount,"Locked ERC20: transfer amount exceeds balance 2 of locked");
         
         //the following update locked records
         uint[] memory keys = _balanceFreeTimeKeys[account];
