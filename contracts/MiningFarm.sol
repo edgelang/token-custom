@@ -314,7 +314,7 @@ contract MiningFarm is Ownable{
     /**
      * @dev deposit STokens to mine reward tokens
      */
-    function depositToMine(uint256 amount)public {
+    function depositToMining(uint256 amount)public {
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         //first try to transfer amount from sender to this contract
