@@ -351,22 +351,31 @@ contract MiningFarm is Ownable{
         require(amount>0,"deposit number should greater than 0");
         _rewardToken.safeTransferFrom(account,address(this),amount);
         uint timeKey= time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
-        RoundSlotInfo storage slot = _roundSlots[timeKey];
-        
         _initOrUpdateLowestWaterMarkAndTotalStaked(timeKey,0);
+        //timeKey will definitely in _roundSlotsIndex after init
 
-        uint256 accumulate = 0;
+        RoundSlotInfo storage slot = _roundSlots[timeKey];
+        uint256 previousAccumulate = 0;
         uint256 slotIndex = 0;
+        // bool findKey = false;
         for (uint256 ii=_roundSlotsIndex.length;ii>0;ii--){
             uint key = _roundSlotsIndex[ii-1];
             if (key == timeKey){
-                slotIndex == ii-1;
-            }
-            RoundSlotInfo storage previous = _roundSlots[key];
-            if (previous.reward.accumulateAmount>0){
-                accumulate = previous.reward.accumulateAmount;
+                // findKey = true;
+                slotIndex = ii-1;
+                if (ii>1){
+                    RoundSlotInfo storage previous = _roundSlots[_roundSlotsIndex[ii-2]];
+                    if (previous.reward.accumulateAmount>0){
+                        previousAccumulate = previous.reward.accumulateAmount;
+                        break;
+                    }
+                }
                 break;
             }
+        }
+        if (previousAccumulate>0 && slot.reward.accumulateAmount==0){
+            //if we find a previous accumulate and current accu is 0, set current slot's accumulate to previous one's
+            slot.reward.accumulateAmount = previousAccumulate;
         }
         slot.reward.amount = slot.reward.amount.add(amount);
         slot.reward.lastSubmiter = account;
@@ -376,6 +385,15 @@ contract MiningFarm is Ownable{
             RoundSlotInfo storage update = _roundSlots[key];
             update.reward.accumulateAmount = update.reward.accumulateAmount.add(amount);
         }
+        // if (slotIndex==0){
+        //     slot.reward.accumulateAmount = slot.reward.accumulateAmount.add(20000);
+        // }
+        // if (slotIndex==1){
+        //     slot.reward.accumulateAmount = slot.reward.accumulateAmount.add(30000);
+        // }
+        // if(!findKey){
+        //     slot.reward.accumulateAmount = slot.reward.accumulateAmount.add(500000);
+        // }
 
         _allTimeTotalMined = _allTimeTotalMined.add(amount);
         _totalRewardInPool = _totalRewardInPool.add(amount);
