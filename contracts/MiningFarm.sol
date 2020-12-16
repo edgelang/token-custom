@@ -220,7 +220,8 @@ contract MiningFarm is Ownable{
                 if (time<=before){
                     StakeRecord memory record = user.stakeInfo[time];
                     uint256 mined = _calculateMinedRewardDuringFor(record,
-                        lastUpdate,before+_miniStakePeriodInSeconds);
+                        lastUpdate+_miniStakePeriodInSeconds,
+                        before+_miniStakePeriodInSeconds);
                     minedTotal = minedTotal.add(mined);
                 }
             }   
@@ -298,6 +299,9 @@ contract MiningFarm is Ownable{
         uint256 mined = 0;
         for (uint256 ii=_roundSlotsIndex.length;ii>0;ii--){
             uint key = _roundSlotsIndex[ii-1];
+            if (key<=afterTime){
+                break;
+            }
             if (key<=beforeTime && key>afterTime && key>=record.timeKey){
                 //calculate this period of mining reward
                 RoundSlotInfo memory slot = _roundSlots[key];
@@ -308,9 +312,6 @@ contract MiningFarm is Ownable{
                             .div(slot.stakedLowestWaterMark));
                     }
                 }
-            }
-            if (key<=afterTime){
-                break;
             }
         }
         return mined;
