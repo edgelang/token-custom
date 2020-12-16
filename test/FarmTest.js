@@ -21,6 +21,8 @@ contract("Mining", async accounts=>{
     let stokenInFarm = 0;
     let stokenLockedInFarm=0;
     let baseTime = 0;
+    let adminRToken =10000;
+    let farmRToken = 0;
     it("Mining BTC: testNormalDepositToMining",async ()=>{
         //return;
         await init();
@@ -48,7 +50,7 @@ contract("Mining", async accounts=>{
         
     });
     it("Mining BTC: testDepositLockedTokens",async ()=>{
-        //return;
+        return;
         await init(); 
         let stakeNum = 100;
         await mintWith(2,stakeNum);
@@ -103,20 +105,73 @@ contract("Mining", async accounts=>{
 
     });
     it("Mining BTC: testDepositLockedTokensThenWithdraw",async ()=>{
-        //return;
+        return;
         await init(); 
         await mintLockedWith(4,100);
-        delayWithNewBlock(timeUnit*2);
+        await mintLockedWith(8,200);
+        await delayWithNewBlock(timeUnit*3);
+        await stakeLockedToMining(8,200);
         await mintWith(4,100);
-        delayWithNewBlock(timeUnit*2);
+        await delayWithNewBlock(timeUnit*3);
         await mintLockedWith(4,100);
         await stakeLockedToMining(4,200);
+        await delayWithNewBlock(timeUnit*3);
+        await unStakeLocked(4,200);
+        let free = await sToken.getFreeToTransferAmount(accounts[4]);
+        console.log("freed 4:"+free.toNumber());
+        assert.equal(free.toNumber(),200,"free to move error");
 
+        free = await sToken.getFreeToTransferAmount(accounts[6]);
+        console.log("freed 6:"+free.toNumber());
+        assert.equal(free.toNumber(),0,"free to move error");
+
+        await mintLockedWith(6,100);
+        await delayWithNewBlock(timeUnit*3);
+        free = await sToken.getFreeToTransferAmount(accounts[6]);
+        console.log("freed 6:"+free.toNumber());
+        assert.equal(free.toNumber(),25,"free to move error");
+
+        await mintWith(6,100);
+        await delayWithNewBlock(timeUnit*3);
+        free = await sToken.getFreeToTransferAmount(accounts[6]);
+        console.log("freed 6:"+free.toNumber());
+        assert.equal(free.toNumber(),150,"free to move error");
+
+        await mintLockedWith(6,100);
+        // await stakeLockedToMining(6,200);
+        await delayWithNewBlock(timeUnit*3);
+        // await unStakeLocked(4,200);
+
+        free = await sToken.getFreeToTransferAmount(accounts[6]);
+        console.log("freed 6:"+free.toNumber());
+        assert.equal(free.toNumber(),200,"free to move error");
 
     });
     it("Mining BTC: testAdminDeposits BTC",async ()=>{
         //return;
-        await init(); 
+        await init();
+        let timekey = getTimeKey();
+        let slot = await farm.viewRoundSlot(timekey);
+        assert.equal(slot.rewardAmount,0);
+        await depositRewardFrom(1,timekey);
+        slot = await farm.viewRoundSlot(timekey);
+        assert.equal(slot.rewardAmount,1);
+        await depositRewardFrom(2,timekey);
+        slot = await farm.viewRoundSlot(timekey);
+        assert.equal(slot.rewardAmount,3);
+
+        await delayWithNewBlock(timeUnit*3);
+        await depositRewardFrom(4,timekey);
+        slot = await farm.viewRoundSlot(timekey);
+        assert.equal(slot.rewardAmount,7);
+
+        timekey = getTimeKey();
+        slot = await farm.viewRoundSlot(timekey);
+        assert.equal(slot.rewardAmount,0);
+
+        await depositRewardFrom(8,timekey);
+        slot = await farm.viewRoundSlot(timekey);
+        assert.equal(slot.rewardAmount,8);
     });
     it("Mining BTC: testAdminDeposits BTC",async ()=>{
         //return;
@@ -213,6 +268,29 @@ contract("Mining", async accounts=>{
 
 
     }
+    async function unStakeLocked(account_index,num){
+        await farm.withdrawLatestLockedSToken(num,{from:accounts[account_index]});
+        stokenInFarm -= num;
+        stokenLockedInFarm -= num;
+        let info = getAccountInfo(account_index);
+        info.balance+=num;
+        info.locked+=num;
+
+        let inFarmStoken = await sToken.balanceOf(farm.address);
+        console.log("farm's staked balance:"+inFarmStoken.toNumber());
+        assert.equal(inFarmStoken.toNumber(),stokenInFarm);
+
+        inFarmStoken = await sToken.linearLockedBalanceOf(farm.address);
+        console.log("farm's staked locked balance:"+inFarmStoken.toNumber());
+        assert.equal(inFarmStoken.toNumber(),stokenLockedInFarm);
+
+        let bal = await sToken.balanceOf(accounts[account_index]);
+        assert.equal(bal.toNumber(),info.balance);
+        
+        
+        bal = await sToken.linearLockedBalanceOf(accounts[account_index]);
+        assert.equal(bal.toNumber(),info.locked,"locked num error");
+    }
     async function unStake(account_index,num){
         await farm.withdrawLatestSToken(num,{from:accounts[account_index]});
         stokenInFarm -= num;
@@ -222,6 +300,17 @@ contract("Mining", async accounts=>{
         assert.equal(inFarmStoken.toNumber(),stokenInFarm);
         let bal = await sToken.balanceOf(accounts[account_index]);
         assert.equal(bal.toNumber(),info.balance);
+    }
+    async function depositRewardFrom(num,time){
+        await rToken.approve(farm.address,num,{from:accounts[0]});
+        await farm.depositRewardFromForTime(accounts[0],num,time);
+        adminRToken-=num;
+        farmRToken+=num;
+        let bal = await rToken.balanceOf(accounts[0]);
+        assert.equal(bal.toNumber(),adminRToken);
+
+        bal = await rToken.balanceOf(farm.address);
+        assert.equal(bal.toNumber(),farmRToken);
     }
     function getAccountInfo(account_index){
         let info = gAccountsInfo[account_index];
