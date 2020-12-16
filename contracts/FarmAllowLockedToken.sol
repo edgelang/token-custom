@@ -122,10 +122,11 @@ contract FarmAllowLockedToken is MiningFarm{
         require(ii>0,"no deposit record found");
         //we can't change the status for calculating reward before 2 rounds agao
         //because the user already staked full for mining 2 rounds agao
-        uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
+        uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey();
+        updateAlreadyMinedReward(account,alreadyMinedTimeKey); 
         uint currentKey = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         uint256 needCost = amount;
-        bool updateReward = false;
+        
         bool[] memory toDelete = new bool[](ii);
         _initOrUpdateLowestWaterMarkAndTotalStaked(currentKey,0);
         RoundSlotInfo storage currentSlot = _getRoundSlotInfo(currentKey);
@@ -135,11 +136,7 @@ contract FarmAllowLockedToken is MiningFarm{
                 break;
             }
             uint timeKey = user.stakedTimeIndex[ii-1];
-            if (timeKey <= alreadyMinedTimeKey && !updateReward){
-                //need to update mined token balance first,only run this once
-                updateAlreadyMinedReward(account,alreadyMinedTimeKey);
-                updateReward = true;
-            }
+            
             StakeRecord storage record = user.stakeInfo[timeKey];
             RoundSlotInfo storage slot = _getRoundSlotInfo(timeKey);
             update = record.lockedAmount.sub(record.lockedWithdrawed,"lockedWithdrawed>lockedAmount");
@@ -156,9 +153,8 @@ contract FarmAllowLockedToken is MiningFarm{
                     toDelete[ii-1] = true;
                 }
             }
-            if (timeKey > alreadyMinedTimeKey){
-                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"update > totalStakedInSlot");
-                slot.totalStaked =slot.totalStaked.sub(amount,"amount > totalStaked");
+            if (update>0){
+                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"update>totalStakedInSlot");
             }
             if (update>0 && timeKey<currentKey){
                 if (update<=currentSlot.stakedLowestWaterMark){
@@ -169,6 +165,7 @@ contract FarmAllowLockedToken is MiningFarm{
                 
             }
         }
+        currentSlot.totalStaked = currentSlot.totalStaked.sub(amount,"amount>totalStaked");
         for(uint256 xx=0;xx<toDelete.length;xx++){
             bool del = toDelete[xx];
             if (del){
