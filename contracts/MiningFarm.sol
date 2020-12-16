@@ -302,7 +302,7 @@ contract MiningFarm is Ownable{
             if (key<=afterTime){
                 break;
             }
-            if (key<=beforeTime && key>afterTime && key>=record.timeKey){
+            if (key<=beforeTime && key>afterTime && key>record.timeKey){
                 //calculate this period of mining reward
                 RoundSlotInfo memory slot = _roundSlots[key];
                 if (slot.reward.amount>0){
@@ -428,10 +428,11 @@ contract MiningFarm is Ownable{
         require(ii>0,"no deposit record found");
         //we can't change the status for calculating reward before 2 rounds agao
         //because the user already staked full for mining 2 rounds agao
-        uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
+        uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey();
+        updateAlreadyMinedReward(account,alreadyMinedTimeKey); 
         uint currentKey = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         uint256 needCost = amount;
-        bool updateReward = false;
+
         bool[] memory toDelete = new bool[](ii);
         _initOrUpdateLowestWaterMarkAndTotalStaked(currentKey,0);
         RoundSlotInfo storage currentSlot = _roundSlots[currentKey];
@@ -441,11 +442,7 @@ contract MiningFarm is Ownable{
                 break;
             }
             uint timeKey = user.stakedTimeIndex[ii-1];
-            if (timeKey <= alreadyMinedTimeKey && !updateReward){
-                //need to update mined token balance first,only run this once
-                updateAlreadyMinedReward(account,alreadyMinedTimeKey);
-                updateReward = true;
-            }
+            
             StakeRecord storage record = user.stakeInfo[timeKey];
             RoundSlotInfo storage slot = _roundSlots[timeKey];
             update = record.amount.sub(record.withdrawed,"withdrawed>amount");
@@ -463,9 +460,8 @@ contract MiningFarm is Ownable{
                     toDelete[ii-1]=true;
                 }
             }
-            if (timeKey > alreadyMinedTimeKey){
+            if (update>0){
                 slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"update>totalStakedInSlot");
-                slot.totalStaked = slot.totalStaked.sub(amount,"amount>totalStaked");
             }
             if (update>0 && timeKey<currentKey){
                 if (update<=currentSlot.stakedLowestWaterMark){
@@ -476,6 +472,7 @@ contract MiningFarm is Ownable{
                 
             }
         }
+        currentSlot.totalStaked = currentSlot.totalStaked.sub(amount,"amount>totalStaked");
 
         for(uint256 xx=0;xx<toDelete.length;xx++){
             bool del = toDelete[xx];
@@ -525,6 +522,7 @@ contract MiningFarm is Ownable{
         user.rewardBalanceInpool = user.rewardBalanceInpool.add(minedTotal);
         user.allTimeMinedBalance = user.allTimeMinedBalance.add(minedTotal);
         user.lastUpdateRewardTime = before;
+        //user.lastUpdateRewardTime+_miniStakePeriodInSeconds slot's reward already mined
     }
 
 
