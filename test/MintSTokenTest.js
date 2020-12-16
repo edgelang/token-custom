@@ -19,6 +19,42 @@ contract("BTCST", async accounts=>{
         console.log(gAccountsInfo);
         await transferFrom(0,8,getAccountInfo(0).balance);
     });
+    it("locked token transfer:testWithdrawLockedAmount",async()=>{
+        //return;
+        await init();
+        await mintLockedWith(2,40);
+        await printAccountBal(2);
+        await delayWithNewBlock(timeUnit*lockTime/rounds);
+        console.log("1 round passed");
+        await mintLockedWith(2,40);
+
+        await printAccountBal(2);
+        await instance.approveLocked(accounts[3],70,{from:accounts[2]});
+        await instance.transferLockedFrom(accounts[2],accounts[3],70,{from:accounts[3]});
+        console.log("approve withdrawed 70");
+        await printAccountBal(2);
+        await printAccountBal(3);
+        
+        await delayWithNewBlock(timeUnit*lockTime/rounds);
+        console.log("1 round passed");
+        await printAccountBal(2);
+        await printAccountBal(3);
+        
+        await delayWithNewBlock(timeUnit*lockTime/rounds);
+        console.log("1 round passed");
+        await printAccountBal(2);
+        await printAccountBal(3);
+        
+        await delayWithNewBlock(timeUnit*lockTime/rounds);
+        console.log("1 round passed");
+        await printAccountBal(2);
+        await printAccountBal(3);
+
+        await delayWithNewBlock(timeUnit*lockTime/rounds);
+        console.log("1 round passed");
+        await printAccountBal(2);
+        await printAccountBal(3);
+    });
     it("test getFreeToTransferAmount transfer locked tokens after release time",async ()=>{
         //return;
         await init();
@@ -134,42 +170,6 @@ contract("BTCST", async accounts=>{
         freeToMove = await instance.getFreeToTransferAmount(accounts[8]);
         assert.equal(freeToMove.toNumber(),initFree+amount*1.5,"free to move should be initFree+amount*1.5");
     });
-    it("locked token transfer:testWithdrawLockedAmount",async()=>{
-        //return;
-        await init();
-        await mintLockedWith(2,40);
-        await printAccountBal(2);
-        await delayWithNewBlock(timeUnit*lockTime/rounds);
-        console.log("1 round passed");
-        await mintLockedWith(2,40);
-
-        await printAccountBal(2);
-        await instance.approveLocked(accounts[3],70,{from:accounts[2]});
-        await instance.transferLockedFrom(accounts[2],70,{from:accounts[3]});
-        console.log("approve withdrawed 70");
-        await printAccountBal(2);
-        await printAccountBal(3);
-        
-        await delayWithNewBlock(timeUnit*lockTime/rounds);
-        console.log("1 round passed");
-        await printAccountBal(2);
-        await printAccountBal(3);
-        
-        await delayWithNewBlock(timeUnit*lockTime/rounds);
-        console.log("1 round passed");
-        await printAccountBal(2);
-        await printAccountBal(3);
-        
-        await delayWithNewBlock(timeUnit*lockTime/rounds);
-        console.log("1 round passed");
-        await printAccountBal(2);
-        await printAccountBal(3);
-
-        await delayWithNewBlock(timeUnit*lockTime/rounds);
-        console.log("1 round passed");
-        await printAccountBal(2);
-        await printAccountBal(3);
-    })
 
     async function printAccountBal(index){
         bal = await instance.balanceOf(accounts[index]);

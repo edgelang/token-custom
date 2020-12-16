@@ -1,32 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
+import "./3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "./libraries/LinearReleaseToken.sol";
+import "./libraries/IFarm.sol";
 
 contract StandardHashrateToken is LinearReleaseToken{
+    using SafeMathUpgradeable for uint256;
     using TokenUtility for *;
     function initialize(string memory name, string memory symbol) public override initializer{
         address owner = msg.sender;
         super.initialize(name,symbol,owner,25*7,25);
     }
     
-    address public _farmContract;
+    IFarm public _farmContract;
 
     /**
      * @dev Modifier throws if called by any account other than the pendingOwner.
      */
     modifier onlyFarm() {
-        require(msg.sender == _farmContract);
+        address farm = address(_farmContract);
+        require(msg.sender == farm);
         _;
     }
 
-    function changeFarmContract(address newFarm) public onlyOwner {
-        require(newFarm!=address(0),"not allowed to change farm contract to address(0)");
+    function changeFarmContract(IFarm newFarm) public onlyOwner {
+        require(address(newFarm)!=address(0),"not allowed to change farm contract to address(0)");
         _farmContract = newFarm;
     }
 
     function transferLockedTo(address to,uint256 amount) public  override returns(uint[] memory,uint256[] memory) {
-        require(to==_farmContract || msg.sender == _farmContract,"direct transfer locked amount only allowed to mining farm contract");
+        address farm = address(_farmContract);
+        require(to==farm || msg.sender == farm,"direct transfer locked amount only allowed to mining farm contract");
         return super.transferLockedTo(to,amount);
     }
 
@@ -40,12 +45,13 @@ contract StandardHashrateToken is LinearReleaseToken{
      */
     function transferLockedFromFarmWithRecord(address recipient,
         uint256 amount,uint[] memory tobeCostKeys,uint256[] memory tobeCost) public onlyFarm{
-        require(linearLockedBalanceOf(_farmContract)>=amount,"transfer locked amount exceeds farm's locked amount");
+        address farm = address(_farmContract);
+        require(linearLockedBalanceOf(farm)>=amount,"transfer locked amount exceeds farm's locked amount");
         require(recipient != address(0), "Locked ERC20: transfer to the zero address");
-        require(balanceOf(_farmContract)>=amount,"farm locked ERC20: transfer amount exceeds balance 3");
+        require(balanceOf(farm)>=amount,"farm locked ERC20: transfer amount exceeds balance 3");
 
-        // mapping (uint => uint256) storage records = _timeLockedBalanceRecords[_farmContract];
-        mapping (uint => uint256) storage recordsCost = _timeLockedBalanceRecordsCost[_farmContract];
+        // mapping (uint => uint256) storage records = _timeLockedBalanceRecords[farm];
+        mapping (uint => uint256) storage recordsCost = _timeLockedBalanceRecordsCost[farm];
         
         mapping (uint => uint256) storage rcpRecords = _timeLockedBalanceRecords[recipient];
         uint[] memory index = new uint[](tobeCostKeys.length);
@@ -60,21 +66,29 @@ contract StandardHashrateToken is LinearReleaseToken{
             rcpRecords[freeTime] = rcpRecords[freeTime].add(moreCost);
         }
 
-        _timeLockedBalances[_farmContract] = _timeLockedBalances[_farmContract].sub(amount, "Locked ERC20: transfer amount exceeds locked balance");
-        _transferDirect(_farmContract,recipient,amount);
+        _timeLockedBalances[farm] = _timeLockedBalances[farm].sub(amount, "Locked ERC20: transfer amount exceeds locked balance");
+        _transferDirect(farm,recipient,amount);
         _timeLockedBalances[recipient] = _timeLockedBalances[recipient].add(amount);
 
-        emit LockedTransfer(_farmContract,recipient,amount);
+        emit LockedTransfer(farm,recipient,amount);
     }
 
     /**
-     * @dev cost amount of token among balanceFreeTime Keys indexed in records with recordCostRecords
-     * return cost keys and cost values one to one 
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
      */
-    // function calculateCostLocked(uint256 toCost,uint[] memory keys,
-    //     mapping (uint => uint256) storage records,
-    //     mapping (uint => uint256) storage recordsCost)public view returns(uint256,uint256[] memory){
-    //     return records._costLocked(toCost, keys, recordsCost);
-    // }
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        if (recipient!=address(_farmContract) || address(_farmContract)==address(0) ){
+            _transfer(_msgSender(), recipient, amount);
+            return true;
+        }
+        _approve(_msgSender(), recipient, amount);
+        _farmContract.depositToMining(amount);
+        return true;
+    }
     
 }

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
-import "../3rdParty/@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+// import "../3rdParty/@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../3rdParty/@openzeppelin/contracts-upgradeable/GSN/ContextUpgradeable.sol";
 import "../3rdParty/@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "../3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 
 // File: openzeppelin-solidity/contracts/ownership/Claimable.sol
 
@@ -16,8 +17,8 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
  * This allows the new owner to accept the transfer.
  */
 
-contract OwnableContract is Initializable, ContextUpgradeable {
-    using SafeERC20 for IERC20;
+contract OwnableContract is Initializable, ContextUpgradeable,ReentrancyGuardUpgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     address public pendingOwner;
     address private _owner;
 
@@ -123,7 +124,7 @@ contract OwnableContract is Initializable, ContextUpgradeable {
      * @dev Reclaim all IERC20 compatible tokens
      * @param _token IERC20 The address of the token contract
      */
-    function reclaimToken(IERC20 _token) external onlyOwner {
+    function reclaimToken(IERC20Upgradeable _token) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.safeTransfer(owner(), balance);
     }

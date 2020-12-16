@@ -8,11 +8,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 import "./3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./libraries/TokenUtility.sol";
+import "./libraries/IFarm.sol";
 
 import "./StandardHashrateToken.sol";
 import "./BTCST.sol";
 
-contract MiningFarm is Ownable{
+contract MiningFarm is Ownable,IFarm{
     using SafeMath for uint256;
     using SafeMath for uint;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -319,7 +320,7 @@ contract MiningFarm is Ownable{
     /**
      * @dev deposit STokens to mine reward tokens
      */
-    function depositToMining(uint256 amount)public {
+    function depositToMining(uint256 amount)external override{
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         //first try to transfer amount from sender to this contract

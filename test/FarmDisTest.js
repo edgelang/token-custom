@@ -51,132 +51,125 @@ contract("Mining", async accounts=>{
         await unStake(0,1000);
         
     });
-    it("Mining BTC: testDepositLockedTokens",async ()=>{
-        //return;
-        await init(); 
-        let stakeNum = 100;
-        await mintWith(2,stakeNum);
-        await mintWith(3,stakeNum*2);
-        await stakeToMining(2,stakeNum);
-        await stakeToMining(3,stakeNum*2);
-        console.log(getTimeKey()+" tkey");
-        await delayWithNewBlock(1);
-        console.log(baseTime+"basetime");
-        let timekey = getTimeKey();
-        console.log(timekey+" tkey-------");
-        let slot = await farm.viewRoundSlot(timekey);
-        console.log(slot);
-        assert.equal(slot.stakedLowestWaterMark,0,"stakedLowestWaterMark should be 0");
-        assert.equal(slot.totalStaked,stakeNum*3,"total stake num error");
-        assert.equal(slot.totalStakedInSlot,stakeNum*3,"totalStakedInSlot error");
-
-        let user = await farm.viewUserInfo(accounts[2]);
-        assert.equal(user.amount,stakeNum,"user.amount error");
-        user = await farm.viewUserInfo(accounts[3]);
-        assert.equal(user.amount,stakeNum*2,"user.amount error");
-
-        await unStake(2,stakeNum/2);
-        await unStake(3,stakeNum);
-        user = await farm.viewUserInfo(accounts[2]);
-        console.log(user);
-        assert.equal(user.stakeInfo[0].withdrawed,stakeNum/2,"withdrawed error");
-        user = await farm.viewUserInfo(accounts[3]);
-        assert.equal(user.stakeInfo[0].withdrawed,stakeNum,"withdrawed error");
-        await delayWithNewBlock(stakePeriod);
-
-        await stakeToMining(0,100);
-        timekey = getTimeKey();
-        console.log(timekey+" tkey-------");
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.stakedLowestWaterMark,stakeNum*1.5,"stakedLowestWaterMark should be 150");
-
-        await stakeToMining(2,1);
-        await stakeToMining(3,2);
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.stakedLowestWaterMark,stakeNum*1.5,"stakedLowestWaterMark should be 150");
-
-        timekey = getTimeKey();
-        console.log(timekey+" tkey-------");
-
-        await unStake(2,11);
-        await unStake(3,12);
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.stakedLowestWaterMark,130,"stakedLowestWaterMark should be 130");
-
-        await unStake(0,100);
-
-    });
-    it("Mining BTC: testDepositLockedTokensThenWithdraw",async ()=>{
-        //return;
-        await init(); 
-        let U = 9;
-        await mintLockedWith(4,100);
-        await mintLockedWith(U,200);
-        await delayWithNewBlock(timeUnit*3);
-        await stakeLockedToMining(U,200);
-        await mintWith(4,100);
-        await delayWithNewBlock(timeUnit*3);
-        await mintLockedWith(4,100);
-        await stakeLockedToMining(4,200);
-        await delayWithNewBlock(timeUnit*3);
-        await unStakeLocked(4,200);
-        let free = await sToken.getFreeToTransferAmount(accounts[4]);
-        console.log("freed 4:"+free.toNumber());
-        assert.equal(free.toNumber(),200,"free to move error");
-
-        free = await sToken.getFreeToTransferAmount(accounts[6]);
-        console.log("freed 6:"+free.toNumber());
-        assert.equal(free.toNumber(),0,"free to move error");
-
-        await mintLockedWith(6,100);
-        await delayWithNewBlock(timeUnit*3);
-        free = await sToken.getFreeToTransferAmount(accounts[6]);
-        console.log("freed 6:"+free.toNumber());
-        assert.equal(free.toNumber(),25,"free to move error");
-
-        await mintWith(6,100);
-        await delayWithNewBlock(timeUnit*3);
-        free = await sToken.getFreeToTransferAmount(accounts[6]);
-        console.log("freed 6:"+free.toNumber());
-        assert.equal(free.toNumber(),150,"free to move error");
-
-        await mintLockedWith(6,100);
-        // await stakeLockedToMining(6,200);
-        await delayWithNewBlock(timeUnit*3);
-        // await unStakeLocked(4,200);
-
-        free = await sToken.getFreeToTransferAmount(accounts[6]);
-        console.log("freed 6:"+free.toNumber());
-        assert.equal(free.toNumber(),200,"free to move error");
-        await delayWithNewBlock(timeUnit*3);
-
-    });
-    it("Mining BTC: testAdminDeposits BTC",async ()=>{
+    it("Mining BTC: testMiningWithLockedTokens",async ()=>{
         //return;
         await init();
+        let btcunit = 10;
+        let A=7,B=8;
         let timekey = getTimeKey();
-        let slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.rewardAmount,0);
-        await depositRewardFrom(1,timekey);
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.rewardAmount,1);
-        await depositRewardFrom(2,timekey);
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.rewardAmount,3);
-
+        let t1 = timekey;
+        await mintWith(A,100);
+        await mintWith(B,200);
+        await stakeToMining(A,100);
+        await stakeToMining(B,200);
+        
+        await depositRewardFrom(btcunit*0.5,timekey);        
+        let slot = await farm.viewRoundSlot(t1);
+        console.log(t1+" day1 slot t1:");
+        console.log(slot);
+        //before was day1
         await delayWithNewBlock(timeUnit*3);
-        await depositRewardFrom(4,timekey);
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.rewardAmount,7);
+        let t2 = getTimeKey();
+        let bal = await farm.getTotalRewardBalanceInPool(accounts[A]);
+        assert.equal(bal.toNumber(),0);
+        bal = await farm.getTotalRewardBalanceInPool(accounts[B]);
+        assert.equal(bal.toNumber(),0);
 
-        timekey = getTimeKey();
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.rewardAmount,0);
-
-        await depositRewardFrom(8,timekey);
-        slot = await farm.viewRoundSlot(timekey);
-        assert.equal(slot.rewardAmount,8);
+        await depositRewardFrom(btcunit*0.6,t2);
+        // slot = await farm.viewRoundSlot(t1);
+        // console.log(t2+" day2 slot t1:");
+        // console.log(slot);
+        slot = await farm.viewRoundSlot(t2);
+        console.log(t2+" day2 slot t2:");
+        console.log(slot);
+        await depositRewardFrom(btcunit*0.5,t1);
+        // slot = await farm.viewRoundSlot(t1);
+        // console.log(t2+" day2 slot t1:");
+        // console.log(slot);
+        slot = await farm.viewRoundSlot(t2);
+        console.log(t2+" day2 slot t2:");
+        console.log(slot);
+        
+        //before was day2
         await delayWithNewBlock(timeUnit*3);
+
+        let t3 = getTimeKey();
+        await depositRewardFrom(btcunit*0.8,t3);
+        await depositRewardFrom(btcunit*0.5,t1);
+        await depositRewardFrom(btcunit*0.6,t2);
+        
+        await printUserInfo(B);
+        await unStake(B,100);
+        await printUserInfo(B);
+
+        await stakeToMining(B,100);
+
+        slot = await farm.viewRoundSlot(t3);
+        console.log(t3+" day3 slot t3:");
+        console.log(slot);
+        slot = await farm.viewRoundSlot(t2);
+        console.log(t3+" day3 slot t2:");
+        console.log(slot);
+        // slot = await farm.viewRoundSlot(t1);
+        // console.log(t3+" day3 slot t1:");
+        // console.log(slot);
+        
+        await delayWithNewBlock(1);
+        bal = await farm.getTotalRewardBalanceInPool(accounts[A]);
+        assert.equal(bal.toNumber(),0.4*btcunit);
+
+        bal = await farm.getTotalRewardBalanceInPool(accounts[B]);
+        assert.equal(bal.toNumber(),0.8*btcunit);
+
+        //before was day3
+        await delayWithNewBlock(timeUnit*3);
+        let t4 = getTimeKey();
+        bal = await farm.getTotalRewardBalanceInPool(accounts[A]);
+        assert.equal(bal.toNumber(),0.8*btcunit);
+        
+        slot = await farm.viewRoundSlot(t3);
+        console.log(t4+" day4 slot t3:");
+        console.log(slot);
+        slot = await farm.viewRoundSlot(t2);
+        console.log(t4+" day4 slot t2:");
+        console.log(slot);
+        // slot = await farm.viewRoundSlot(t1);
+        // console.log(t4+" day4 slot t1:");
+        // console.log(slot);
+
+        await printUserInfo(B);
+        bal = await farm.getTotalRewardBalanceInPool(accounts[B]);
+        assert.equal(bal.toNumber(),1.2*btcunit);
+
+        await depositRewardFrom(btcunit*0.9,t4);
+        slot = await farm.viewRoundSlot(t4);
+        console.log(t4+" day4 slot t4:");
+        console.log(slot);
+
+        //before was day4
+        await delayWithNewBlock(timeUnit*3);
+        let t5 = getTimeKey();
+        await depositRewardFrom(btcunit*0.6,t5);
+        slot = await farm.viewRoundSlot(t4);
+        console.log(t5+" day5 slot t4:");
+        console.log(slot);
+
+
+        bal = await farm.getTotalRewardBalanceInPool(accounts[A]);
+        assert.equal(bal.toNumber(),1.1*btcunit);
+
+        bal = await farm.getTotalRewardBalanceInPool(accounts[B]);
+        assert.equal(bal.toNumber(),1.8*btcunit);
+
+        //before was day5
+        await delayWithNewBlock(timeUnit*3);
+
+        bal = await farm.getTotalRewardBalanceInPool(accounts[A]);
+        assert.equal(bal.toNumber(),1.3*btcunit);
+
+        bal = await farm.getTotalRewardBalanceInPool(accounts[B]);
+        assert.equal(bal.toNumber(),2.2*btcunit);
+
     });
 
     function getTimeKey(){

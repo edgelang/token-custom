@@ -2,12 +2,10 @@
 pragma solidity >=0.4.22 <0.8.0;
 
 import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "../3rdParty/@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "./PeggyToken.sol";
 import "./TokenUtility.sol";
 
-
-contract LinearReleaseToken is PeggyToken,ReentrancyGuardUpgradeable{
+contract LinearReleaseToken is PeggyToken{
     using SafeMathUpgradeable for uint256;
     using TokenUtility for *;
     /**

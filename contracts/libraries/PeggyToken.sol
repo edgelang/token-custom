@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "../3rdParty/@openzeppelin/contracts-upgradeable/presets/ERC20PresetMinterPauserUpgradeable.sol";
-
 import "./OwnableContract.sol";
 
 contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
@@ -102,5 +96,5 @@ contract PeggyToken is ERC20PresetMinterPauserUpgradeable, OwnableContract{
             _totalSupplyLocked = _totalSupplyLocked.add(amount);
         }
     }
-    
+
 }
