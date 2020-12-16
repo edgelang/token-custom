@@ -207,16 +207,20 @@ contract MiningFarm is Ownable{
         StakeRecord storage record = user.stakeInfo[key];
         return (record.timeKey,record.amount,record.lockedAmount,record.withdrawed,record.lockedWithdrawed);
     }
-    function getRewardBalanceInPoolBefore(address account,uint before) public view returns(uint256){
+    function getUncalculateRewardBalanceInPoolBefore(address account,uint before) public view returns(uint256){
         UserInfo storage user = _userInfo[account];
         uint lastUpdate = user.lastUpdateRewardTime;
+        if (before<=lastUpdate){
+            return 0;
+        }
         uint256 minedTotal = 0;
         if (user.stakedTimeIndex.length>0){
             for (uint256 xx=0;xx<user.stakedTimeIndex.length;xx++){
                 uint time = user.stakedTimeIndex[xx];
                 if (time<=before){
                     StakeRecord memory record = user.stakeInfo[time];
-                    uint256 mined = _calculateMinedRewardDuringFor(record,lastUpdate,before);
+                    uint256 mined = _calculateMinedRewardDuringFor(record,
+                        lastUpdate,before+_miniStakePeriodInSeconds);
                     minedTotal = minedTotal.add(mined);
                 }
             }   
@@ -227,7 +231,7 @@ contract MiningFarm is Ownable{
         uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
         UserInfo memory user = _userInfo[account];
         uint256 old = user.rewardBalanceInpool;
-        uint256 mined = getRewardBalanceInPoolBefore(account,alreadyMinedTimeKey);
+        uint256 mined = getUncalculateRewardBalanceInPoolBefore(account,alreadyMinedTimeKey);
         return old.add(mined);
     }
 
@@ -515,7 +519,7 @@ contract MiningFarm is Ownable{
     }
 
     function updateAlreadyMinedReward(address account,uint before) public{
-        uint256 minedTotal = getRewardBalanceInPoolBefore(account,before);
+        uint256 minedTotal = getUncalculateRewardBalanceInPoolBefore(account,before);
         UserInfo storage user = _userInfo[account];
         user.rewardBalanceInpool = user.rewardBalanceInpool.add(minedTotal);
         user.allTimeMinedBalance = user.allTimeMinedBalance.add(minedTotal);
