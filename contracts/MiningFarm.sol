@@ -320,7 +320,7 @@ contract MiningFarm is Ownable,IFarm{
     /**
      * @dev deposit STokens to mine reward tokens
      */
-    function depositToMining(uint256 amount)external override{
+    function depositToMining(uint256 amount)public override{
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         //first try to transfer amount from sender to this contract

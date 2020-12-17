@@ -26,7 +26,7 @@ contract FarmAllowLockedToken is MiningFarm{
         uint256 miniStakePeriod,uint startTime,string memory desc)
         MiningFarm(SToken,rewardToken,miniStakePeriod,startTime,desc,msg.sender) public{   
     }
-    function depositLockedToMining(uint256 amount) external {
+    function depositLockedToMining(uint256 amount) public {
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         uint256 bal = _stoken.linearLockedBalanceOf(account);
@@ -103,7 +103,7 @@ contract FarmAllowLockedToken is MiningFarm{
     /**
      * @dev withdraw all locked SToken
      */
-    function withdrawAllLockedSToken()external {
+    function withdrawAllLockedSToken()public {
         address account = address(msg.sender);
         UserInfo storage user = _userInfo[account];
         withdrawLatestLockedSToken(user.lockedAmount);
