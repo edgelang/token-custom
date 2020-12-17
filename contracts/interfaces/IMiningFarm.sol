@@ -54,11 +54,12 @@ interface IMiningFarm{
     function viewTotalRewardInPool()external view returns(uint256);
 
     function viewStakeRecord(address account,uint day)external view returns (uint,uint256,uint256,uint256,uint256);
-
+    function viewAllTimeTotalMined()external view returns(uint256);
 
     function apiWithdrawAllSToken()external;
     function apiWithdrawAllLockedSToken()external;
     function apiWithdrawLatestLockedSToken(uint256 amount)external;
+    function apiWithdrawLatestSToken(uint256 amount)external;
 
     function apiDepositToMining(uint256 amount)external;
     function apiDepositLockedToMining(uint256 amount) external;

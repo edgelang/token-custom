@@ -98,6 +98,9 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
     function apiWithdrawLatestLockedSToken(uint256 amount)external override{
         withdrawLatestLockedSToken(amount);
     }
+    function apiWithdrawLatestSToken(uint256 amount)external override{
+        withdrawLatestSToken(amount);
+    }
 
     function apiDepositToMining(uint256 amount)external override{
         depositToMining(amount);
@@ -144,5 +147,9 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
 
     function viewStakeRecord(address account,uint day)external view override returns (uint,uint256,uint256,uint256,uint256) {
         return stakeRecord(account, day);
+    }
+
+    function viewAllTimeTotalMined()external view override returns(uint256){
+        return _allTimeTotalMined;
     }
 }
