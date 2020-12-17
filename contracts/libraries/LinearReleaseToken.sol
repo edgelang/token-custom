@@ -4,8 +4,9 @@ pragma solidity >=0.4.22 <0.8.0;
 import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "./PeggyToken.sol";
 import "./TokenUtility.sol";
+import "../interfaces/ISTokenERC20.sol";
 
-contract LinearReleaseToken is PeggyToken{
+contract LinearReleaseToken is PeggyToken,ISTokenERC20{
     using SafeMathUpgradeable for uint256;
     using TokenUtility for *;
     /**
@@ -78,7 +79,7 @@ contract LinearReleaseToken is PeggyToken{
     /**
      * @dev See {locked allowance}.
      */
-    function allowanceLocked(address owner, address spender) public view virtual returns (uint256) {
+    function allowanceLocked(address owner, address spender) external view override returns (uint256) {
         return _lockedAllowances[owner][spender];
     }
 
@@ -128,20 +129,17 @@ contract LinearReleaseToken is PeggyToken{
         super.mint(account,amount);
     }
 
-    function linearLockedBalanceOf(address account) public view returns (uint256){
+    function linearLockedBalanceOf(address account) external view override returns (uint256){
         return _timeLockedBalances[account];
     }
-    // function linearLockedRecordsOf(address account) public view returns (mapping(uint => uint256) memory){
-    //     return _timeLockedBalanceRecords[account];
-    // }
-    // function linearLockedRecordsCostOf(address account) public view returns (mapping (uint => uint256) memory){
-    //     return _timeLockedBalanceRecordsCost[account];
-    // }
+    function _linearLockedBalanceOf(address account) public view returns (uint256){
+        return _timeLockedBalances[account];
+    }
 
     /**
      * @dev return how much free tokens the address could be used
      */
-    function getFreeToTransferAmount(address account) public view returns (uint256){
+    function getFreeToTransferAmount(address account) external view override returns (uint256){
         uint256 balance = balanceOf(account);
         uint256 lockedBalance = _timeLockedBalances[account];
         if (lockedBalance == 0){
@@ -183,21 +181,21 @@ contract LinearReleaseToken is PeggyToken{
     /**
      * @dev total supply which was minted by time lock
      */
-    function totalSupplyReleaseByTimeLock() public view returns (uint256) {
+    function totalSupplyReleaseByTimeLock() external view override returns (uint256) {
         return _totalSupplyReleaseByTimeLock;
     }
 
     /**
      * @dev total supply which was already released to circulation from locked supply
      */
-    function totalReleasedSupplyReleaseByTimeLock() public view returns (uint256) {
+    function totalReleasedSupplyReleaseByTimeLock() external view override returns (uint256) {
         return _totalReleasedSupplyReleaseByTimeLock;
     }
 
     /**
      * @dev total remaining locked supply tokens
      */
-    function getTotalRemainingSupplyLocked() public view returns (uint256) {
+    function getTotalRemainingSupplyLocked() external view override returns (uint256) {
         return _totalSupplyReleaseByTimeLock.sub(_totalReleasedSupplyReleaseByTimeLock);
     }
 
@@ -341,7 +339,7 @@ contract LinearReleaseToken is PeggyToken{
         return cleared;
     }
 
-    function transferLockedFrom(address from,address to,uint256 amount) public nonReentrant virtual returns(uint[] memory,uint256[] memory) {
+    function transferLockedFrom(address from,address to,uint256 amount) external nonReentrant override returns(uint[] memory,uint256[] memory) {
         (uint[] memory freeTimeIndex,uint256[] memory locked) = _transferLocked(from, to, amount);
         _approveLocked(from,_msgSender(),
             _lockedAllowances[from][_msgSender()]
@@ -356,7 +354,7 @@ contract LinearReleaseToken is PeggyToken{
 
 
 
-    function approveLocked(address spender,uint256 amount) public nonReentrant virtual returns(bool){
+    function approveLocked(address spender,uint256 amount) external nonReentrant override returns(bool){
         _approveLocked(_msgSender(), spender, amount);
         return true;
     }
@@ -376,7 +374,7 @@ contract LinearReleaseToken is PeggyToken{
         require(account != address(0), "Locked ERC20: transfer from the zero address");
         require(recipient != address(0), "Locked ERC20: transfer to the zero address");
         require(balanceOf(account)>=amount,"Locked ERC20: transfer amount exceeds balance 1");
-        require(linearLockedBalanceOf(account)>=amount,"Locked ERC20: transfer amount exceeds balance 2 of locked");
+        require(_linearLockedBalanceOf(account)>=amount,"Locked ERC20: transfer amount exceeds balance 2 of locked");
         
         //the following update locked records
         uint[] memory keys = _balanceFreeTimeKeys[account];
