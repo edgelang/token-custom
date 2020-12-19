@@ -21,19 +21,15 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
      * @dev for lookup slot infomation in store
      */
     function viewRoundSlot(uint timeKey) external override view returns(ISlotInfoResult memory){
-        RoundSlotInfo storage round = _getRoundSlotInfo(timeKey);
-        address[] memory addrs = new address[](round.stakedAddressSet.length());
-        for(uint256 ii=0;ii<round.stakedAddressSet.length();ii++){
-            addrs[ii] = round.stakedAddressSet.at(ii);
-        }
+        RoundSlotInfo storage round = _roundSlots[timeKey];
         return ISlotInfoResult({
-            rewardLastSubmiter:round.reward.lastSubmiter,
-            rewardAmount:round.reward.amount,
-            rewardAccumulateAmount:round.reward.accumulateAmount,
+            rewardLastSubmiter:round.rLastSubmiter,
+            rewardAmount:round.rAmount,
+            rewardAccumulateAmount:round.rAccumulateAmount,
             totalStaked:round.totalStaked,
             stakedLowestWaterMark:round.stakedLowestWaterMark,
             totalStakedInSlot:round.totalStakedInSlot,
-            stakedAddresses:addrs
+            stakedAddresses:round.stakedAddressSet
         });
     }
     /**

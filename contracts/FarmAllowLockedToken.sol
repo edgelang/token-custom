@@ -129,7 +129,7 @@ contract FarmAllowLockedToken is MiningFarm{
         
         bool[] memory toDelete = new bool[](ii);
         _initOrUpdateLowestWaterMarkAndTotalStaked(currentKey,0);
-        RoundSlotInfo storage currentSlot = _getRoundSlotInfo(currentKey);
+        RoundSlotInfo storage currentSlot = _roundSlots[currentKey];
         uint256 update = 0;
         for (ii;ii>0;ii--){
             if (needCost == 0){
@@ -138,7 +138,7 @@ contract FarmAllowLockedToken is MiningFarm{
             uint timeKey = user.stakedTimeIndex[ii-1];
             
             StakeRecord storage record = user.stakeInfo[timeKey];
-            RoundSlotInfo storage slot = _getRoundSlotInfo(timeKey);
+            RoundSlotInfo storage slot = _roundSlots[timeKey];
             update = record.lockedAmount.sub(record.lockedWithdrawed,"lockedWithdrawed>lockedAmount");
             if (needCost<=update){
                 record.lockedWithdrawed = record.lockedWithdrawed.add(needCost);

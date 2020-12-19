@@ -49,15 +49,15 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
     testbsc:{
-      networkCheckTimeout:100000,
-      provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s1.binance.org:8545`),
+      networkCheckTimeout:300000,
+      provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s2.binance.org:8545`),
       network_id: 97,
-      confirmations: 2,
+      confirmations: 4,
       timeoutBlocks: 200,
       skipDryRun: true
     },
     bsc:{
-      networkCheckTimeout:100000,
+      networkCheckTimeout:300000,
       provider: () => new HDWalletProvider(mnemonic, `https://bsc-dataseed1.binance.org`),
       network_id: 56,
       confirmations: 10,

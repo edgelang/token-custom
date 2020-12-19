@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -39,13 +40,6 @@ contract MiningFarm is Ownable,IFarm{
     uint256 public _allTimeTotalMined;
     //total reward still in pool, not claimed
     uint256 public _totalRewardInPool;
-
-    //mining record submit by admin or submiter
-    struct MiningReward{
-        address lastSubmiter;
-        uint256 amount;//how much reward token deposit
-        uint256 accumulateAmount;
-    }
 
     //stake to mine record splited by time period
     struct StakeRecord{
@@ -87,13 +81,19 @@ contract MiningFarm is Ownable,IFarm{
      * @dev slot stores info of each period's mining info
      */
     struct RoundSlotInfo{
-        MiningReward reward;//reward info in this period
+        //mining record submit by admin or submiter
+        //MiningReward reward;//reward info in this period
+        address rLastSubmiter;
+        uint256 rAmount;//how much reward token deposit
+        uint256 rAccumulateAmount;
+        //before was reward
+
         uint256 totalStaked;//totalStaked = previous round's totalStaked + this Round's total staked 
         uint256 stakedLowestWaterMark;//lawest water mark for this slot
         
         uint256 totalStakedInSlot;//this Round's total staked
         //store addresses set which staked in this slot
-        EnumerableSet.AddressSet stakedAddressSet;
+        address[] stakedAddressSet;
     }
     
 
@@ -101,7 +101,7 @@ contract MiningFarm is Ownable,IFarm{
     mapping (address => UserInfo) public _userInfo;
     //reward records split recorded by round slots 
     //time-key => RoundSlotInfo
-    mapping (uint=>RoundSlotInfo) private _roundSlots;
+    mapping (uint=>RoundSlotInfo) public _roundSlots;
     //store time-key arrays for slots
     uint[] public _roundSlotsIndex;
     //account which is mining in this farm
@@ -196,7 +196,7 @@ contract MiningFarm is Ownable,IFarm{
     function miningRewardIn(uint day)public view returns (address,uint256,uint256){
         uint key = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         RoundSlotInfo memory slot = _roundSlots[key];
-        return (slot.reward.lastSubmiter,slot.reward.amount,slot.reward.accumulateAmount);
+        return (slot.rLastSubmiter,slot.rAmount,slot.rAccumulateAmount);
     }
 
     /**
@@ -238,7 +238,7 @@ contract MiningFarm is Ownable,IFarm{
     }
 
 
-    function _getRoundSlotInfo(uint timeKey)internal view returns(RoundSlotInfo storage){
+    function _getRoundSlotInfo(uint timeKey)internal view returns(RoundSlotInfo memory){
         return _roundSlots[timeKey];
     }
     function _safeTokenTransfer(address to,uint256 amount,IERC20Upgradeable token) internal{
@@ -270,7 +270,7 @@ contract MiningFarm is Ownable,IFarm{
         slot.totalStakedInSlot = slot.totalStakedInSlot.add(amount);
         if (maxLast<key){
             //first time to stake in this slot
-            slot.stakedAddressSet.add(account);
+            slot.stakedAddressSet.push(account);
             user.stakedTimeIndex.push(key);   
         }
 
@@ -306,10 +306,10 @@ contract MiningFarm is Ownable,IFarm{
             if (key<=beforeTime && key>afterTime && key>record.timeKey){
                 //calculate this period of mining reward
                 RoundSlotInfo memory slot = _roundSlots[key];
-                if (slot.reward.amount>0){
+                if (slot.rAmount>0){
                     if (slot.stakedLowestWaterMark!=0){
                         mined = mined.add(
-                            slot.reward.amount.mul(remainStaked)
+                            slot.rAmount.mul(remainStaked)
                             .div(slot.stakedLowestWaterMark));
                     }
                 }
@@ -371,35 +371,26 @@ contract MiningFarm is Ownable,IFarm{
                 slotIndex = ii-1;
                 if (ii>1){
                     RoundSlotInfo storage previous = _roundSlots[_roundSlotsIndex[ii-2]];
-                    if (previous.reward.accumulateAmount>0){
-                        previousAccumulate = previous.reward.accumulateAmount;
+                    if (previous.rAccumulateAmount>0){
+                        previousAccumulate = previous.rAccumulateAmount;
                         break;
                     }
                 }
                 break;
             }
         }
-        if (previousAccumulate>0 && slot.reward.accumulateAmount==0){
+        if (previousAccumulate>0 && slot.rAccumulateAmount==0){
             //if we find a previous accumulate and current accu is 0, set current slot's accumulate to previous one's
-            slot.reward.accumulateAmount = previousAccumulate;
+            slot.rAccumulateAmount = previousAccumulate;
         }
-        slot.reward.amount = slot.reward.amount.add(amount);
-        slot.reward.lastSubmiter = account;
+        slot.rAmount = slot.rAmount.add(amount);
+        slot.rLastSubmiter = account;
         //update all accumulateamount from our slot to the latest one
         for (uint256 ii=slotIndex;ii<_roundSlotsIndex.length;ii++){
             uint key = _roundSlotsIndex[ii];
             RoundSlotInfo storage update = _roundSlots[key];
-            update.reward.accumulateAmount = update.reward.accumulateAmount.add(amount);
+            update.rAccumulateAmount = update.rAccumulateAmount.add(amount);
         }
-        // if (slotIndex==0){
-        //     slot.reward.accumulateAmount = slot.reward.accumulateAmount.add(20000);
-        // }
-        // if (slotIndex==1){
-        //     slot.reward.accumulateAmount = slot.reward.accumulateAmount.add(30000);
-        // }
-        // if(!findKey){
-        //     slot.reward.accumulateAmount = slot.reward.accumulateAmount.add(500000);
-        // }
 
         _allTimeTotalMined = _allTimeTotalMined.add(amount);
         _totalRewardInPool = _totalRewardInPool.add(amount);

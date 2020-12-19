@@ -1,4 +1,5 @@
 const { assert } = require("chai");
+const {BigNumber} = require("@ethersproject/bignumber");
 
 const SToken = artifacts.require("StandardHashrateToken");
 const BTCST = artifacts.require("BTCST");
@@ -23,7 +24,7 @@ contract("Mining", async accounts=>{
     let stokenInFarm = 0;
     let stokenLockedInFarm=0;
     let baseTime = 0;
-    let adminRToken =10000;
+    let adminRToken =BigNumber.from("10000000000000000000000");
     let farmRToken = 0;
     it("Mining BTC: testNormalDepositToMining",async ()=>{
         //return;
@@ -314,12 +315,12 @@ contract("Mining", async accounts=>{
         // xxx = await farm.depositRewardFromForTime(accounts[0],num,time);
         // console.log("xxxxxxxx");
         // console.log(xxx);
-        adminRToken-=num;
+        adminRToken =adminRToken.sub(BigNumber.from(num));
         farmRToken+=num;
         let bal = await rToken.balanceOf(farm.address);
         assert.equal(bal.toNumber(),farmRToken);
         bal = await rToken.balanceOf(accounts[0]);
-        assert.equal(bal.toNumber(),adminRToken);
+        assert.equal(bal.toString(),adminRToken.toString());
     }
     function getAccountInfo(account_index){
         let info = gAccountsInfo[account_index];
