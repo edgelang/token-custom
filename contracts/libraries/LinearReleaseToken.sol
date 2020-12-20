@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.8.0;
+pragma solidity 0.6.9;
 
 import "../3rdParty/@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "./PeggyToken.sol";
