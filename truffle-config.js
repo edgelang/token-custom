@@ -45,7 +45,7 @@ module.exports = {
     development: {
      host: "127.0.0.1",     // Localhost (default: none)
      //7545,9545
-     port: 7545,            // Standard Ethereum port (default: none)
+     port: 9545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
     },
     testbsc:{
@@ -94,7 +94,8 @@ module.exports = {
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
-    // timeout: 100000
+    enableTimeouts:false,
+    timeout: 900000
   },
 
   // Configure your compilers
