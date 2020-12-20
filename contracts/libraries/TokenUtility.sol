@@ -43,11 +43,15 @@ library TokenUtility{
     function getTimeKey(uint time,uint256 _farmStartedTime,uint256 _miniStakePeriodInSeconds)internal pure returns (uint){
         require(time>_farmStartedTime,"time should larger than all thing stated time");
         //get the end time of period
-        uint round = time.sub(_farmStartedTime).div(_miniStakePeriodInSeconds);
-        uint end = _farmStartedTime.add(round.mul(_miniStakePeriodInSeconds));
-        if (end < time){
-            return end.add(_miniStakePeriodInSeconds);
-        }
-        return end;
+        uint md = (time.sub(_farmStartedTime)).mod(_miniStakePeriodInSeconds);
+        if (md==0) return time;
+        return time.add(_miniStakePeriodInSeconds).sub(md);
+
+        // uint round = time.sub(_farmStartedTime).div(_miniStakePeriodInSeconds);
+        // uint end = _farmStartedTime.add(round.mul(_miniStakePeriodInSeconds));
+        // if (end < time){
+        //     return end.add(_miniStakePeriodInSeconds);
+        // }
+        // return end;
     }
 }

@@ -471,7 +471,10 @@ contract MiningFarm is Ownable,Pausable,IFarm{
                 
             }
         }
-        currentSlot.totalStaked = currentSlot.totalStaked.sub(amount,"amount>totalStaked");
+        if (amount<=currentSlot.totalStaked){
+            //maker it safer for withdraw SToken
+            currentSlot.totalStaked = currentSlot.totalStaked.sub(amount,"amount>totalStaked");
+        }
 
         for(uint256 xx=0;xx<toDelete.length;xx++){
             bool del = toDelete[xx];
