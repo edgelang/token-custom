@@ -26,7 +26,7 @@ contract FarmAllowLockedToken is MiningFarm{
         uint256 miniStakePeriod,uint startTime,string memory desc)
         MiningFarm(SToken,rewardToken,miniStakePeriod,startTime,desc,msg.sender) public{   
     }
-    function depositLockedToMining(uint256 amount) public {
+    function depositLockedToMining(uint256 amount) public whenNotPaused{
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         uint256 bal = _stoken.linearLockedBalanceOf(account);

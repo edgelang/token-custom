@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 import "./3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 import "./3rdParty/@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -14,7 +15,7 @@ import "./libraries/IFarm.sol";
 import "./StandardHashrateToken.sol";
 import "./BTCST.sol";
 
-contract MiningFarm is Ownable,IFarm{
+contract MiningFarm is Ownable,Pausable,IFarm{
     using SafeMath for uint256;
     using SafeMath for uint;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -129,6 +130,12 @@ contract MiningFarm is Ownable,IFarm{
         _miniStakePeriodInSeconds = miniStakePeriod;
         _farmDescription = desc;
         _farmStartedTime = startTime;
+    }
+    function ownerPause()public onlyOwner{
+        _pause();
+    }
+    function ownerUnpause()public onlyOwner{
+        _unpause();
     }
     function changeBaseTime(uint time)public onlyOwner{
         require(time>0,"base time should >0");
@@ -320,7 +327,7 @@ contract MiningFarm is Ownable,IFarm{
     /**
      * @dev deposit STokens to mine reward tokens
      */
-    function depositToMining(uint256 amount)public override{
+    function depositToMining(uint256 amount)public override whenNotPaused{
         require(amount>0,"deposit number should greater than 0");
         address account = address(msg.sender);
         //first try to transfer amount from sender to this contract
@@ -345,7 +352,7 @@ contract MiningFarm is Ownable,IFarm{
     /**
      * @dev deposit reward token from account to last period
      */
-    function depositRewardFrom(address account,uint256 amount)public{
+    function depositRewardFrom(address account,uint256 amount)public whenNotPaused{
         //deliver reward to 2 rounds agao's stake slot
         //time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         uint time= now.sub(_miniStakePeriodInSeconds*2);
@@ -353,7 +360,7 @@ contract MiningFarm is Ownable,IFarm{
         depositRewardFromForTime(account,amount,key);
     }
 
-    function depositRewardFromForTime(address account,uint256 amount,uint time) public{
+    function depositRewardFromForTime(address account,uint256 amount,uint time) public whenNotPaused{
         require(amount>0,"deposit number should greater than 0");
         _rewardToken.safeTransferFrom(account,address(this),amount);
         uint timeKey= time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
