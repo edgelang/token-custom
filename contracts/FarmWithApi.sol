@@ -46,6 +46,12 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
     function viewRoundSlotsIndex()external view returns(uint[] memory){
         return _roundSlotsIndex;
     }
+    function viewLastSlotIndex()external view returns(uint memory){
+        if (_roundSlotsIndex.length>0){
+            return _roundSlotsIndex[_roundSlotsIndex.length-1];
+        }
+        return 0 ;
+    }
     /**
      * @dev for lookup ming accounts
      */

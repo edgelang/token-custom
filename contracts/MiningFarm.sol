@@ -352,11 +352,14 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev deposit reward token from account to last period
      */
-    function depositRewardFrom(address account,uint256 amount)public whenNotPaused{
-        //deliver reward to 2 rounds agao's stake slot
-        //time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
-        uint time= now.sub(_miniStakePeriodInSeconds*2);
+    function depositRewardFromForYesterday(address account,uint256 amount)public whenNotPaused{
+        uint time= now.sub(_miniStakePeriodInSeconds);
         uint key = time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
+        depositRewardFromForTime(account,amount,key);
+    }
+
+    function depositRewardFromForToday(address account,uint256 amount)public whenNotPaused{
+        uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         depositRewardFromForTime(account,amount,key);
     }
 
