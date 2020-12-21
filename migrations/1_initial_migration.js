@@ -16,17 +16,20 @@ module.exports = async function (deployer,network, accounts) {
   // return;
   const btcst = await deployProxy(BTCST,[],
     {deployer:deployer,unsafeAllowCustomTypes:true,initializer:"initialize"});
-  console.log('btcst deployed at:', btcst.address); 
+  
   let contract = await BTCST.at(btcst.address);
   let res = await contract.initialized();
   console.log("btcst initialized:"+res);
 
   
-  console.log("mock rewardToken deployed at:"+rewardToken.address);
+  
   const farm = await deployer.deploy(Farm,btcst.address,rewardToken.address,"a testing farm");
   console.log("farm deployed at:"+farm.address);
   await btcst.changeFarmContract(farm.address);
   let farmContract = await btcst._farmContract();
+  
+  console.log("mock rewardToken deployed at:"+rewardToken.address);
+  console.log('btcst deployed at:', btcst.address); 
   console.log("farmContract address in btcst changed to:"+farmContract);
   console.log("migration finished");
 

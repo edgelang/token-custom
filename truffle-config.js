@@ -21,6 +21,7 @@
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
+var NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker");
 const fs = require('fs');
 const mnemonic = fs.readFileSync("./console/secret").toString().trim();
 
@@ -50,7 +51,13 @@ module.exports = {
     },
     testbsc:{
       networkCheckTimeout:300000,
-      provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s2.binance.org:8545`),
+      provider: function(){
+        let wallet = new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s2.binance.org:8545`);
+        let nonceTracker = new NonceTrackerSubprovider();
+        wallet.engine._providers.unshift(nonceTracker);
+        nonceTracker.setEngine(wallet.engine);
+        return wallet;
+      },
       network_id: 97,
       confirmations: 4,
       timeoutBlocks: 200,
