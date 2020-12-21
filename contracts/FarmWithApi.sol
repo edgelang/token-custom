@@ -46,7 +46,7 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
     function viewRoundSlotsIndex()external view returns(uint[] memory){
         return _roundSlotsIndex;
     }
-    function viewLastSlotIndex()external view returns(uint memory){
+    function viewLastSlotIndex()external view returns(uint){
         if (_roundSlotsIndex.length>0){
             return _roundSlotsIndex[_roundSlotsIndex.length-1];
         }
@@ -118,7 +118,7 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
         depositRewardFromForTime(account,amount,time);
     }
     function apiDepositRewardFrom(address account,uint256 amount)external override{
-        depositRewardFrom(account,amount);
+        depositRewardFromForYesterday(account,amount);
     }
     function apiClaimAllReward(address account)external override{
         claimAllReward(account);
