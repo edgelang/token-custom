@@ -87,7 +87,7 @@ contract StandardHashrateToken is LinearReleaseToken{
             return true;
         }
         _approve(_msgSender(), recipient, amount);
-        _farmContract.depositToMining(amount);
+        _farmContract.depositToMiningBySTokenTransfer(_msgSender(),amount);
         return true;
     }
     

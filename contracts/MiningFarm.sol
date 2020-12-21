@@ -324,12 +324,19 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         }
         return mined;
     }
+
+    function depositToMiningBySTokenTransfer(address from,uint256 amount)external override{
+        require(address(msg.sender)==address(_stoken),"require callee from stoken,only stoken can activly notice farm to stake other's token to mining");
+        _depositToMiningFrom(from, amount);
+    }
     /**
      * @dev deposit STokens to mine reward tokens
      */
-    function depositToMining(uint256 amount)public override whenNotPaused{
+    function depositToMining(uint256 amount)public override{
+        _depositToMiningFrom(address(msg.sender), amount);
+    }
+    function _depositToMiningFrom(address account,uint256 amount)internal  whenNotPaused{
         require(amount>0,"deposit number should greater than 0");
-        address account = address(msg.sender);
         //first try to transfer amount from sender to this contract
         _stoken.safeTransferFrom(account,address(this),amount);
         
