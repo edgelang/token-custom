@@ -133,7 +133,9 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
     function viewMiningRewardIn(uint day)external view override returns (address,uint256,uint256) {
         return miningRewardIn(day);
     }
-
+    function viewTotalClaimedRewardFrom(address account)external view override returns(uint256){
+        return totalClaimedRewardFrom(account);
+    }
     function viewTotalStaked()external view override returns(uint256) {
         return totalStaked();
     }

@@ -72,6 +72,9 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         uint256 allTimeMinedBalance;
         //mining reward balances in pool without widthdraw
         uint256 rewardBalanceInpool;
+
+        //all time reward balance claimed
+        uint256 allTimeRewardClaimed;
         
         //stake info account =>(time-key => staked record)
         mapping(uint => StakeRecord) stakeInfo;
@@ -182,7 +185,10 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         return user.allTimeMinedBalance;
     }
 
-
+    function totalClaimedRewardFrom(address account)public view returns(uint256){
+        UserInfo memory user = _userInfo[account];
+        return user.allTimeRewardClaimed;
+    }
     /**
      * @dev return hown much already mined from account without widthdraw
      */
@@ -558,6 +564,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
 
         user.rewardBalanceInpool = user.rewardBalanceInpool.sub(amount,"amount>rewardBalanceInpool");
         _safeTokenTransfer(account,amount,_rewardToken);
+        user.allTimeRewardClaimed = user.allTimeRewardClaimed.add(amount);
         _totalRewardInPool = _totalRewardInPool.sub(amount,"amount>_totalRewardInPool");
         emit Claim(account,amount);
     }
