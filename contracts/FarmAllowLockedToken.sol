@@ -145,7 +145,8 @@ contract FarmAllowLockedToken is MiningFarm{
                 update = needCost;
                 needCost = 0;
             }else{
-                needCost = needCost.sub(update,"update > needCost");
+                needCost = needCost.sub(update,"locked update > needCost");
+                //withdrawed all of this record
                 record.lockedWithdrawed = record.lockedAmount;
                 //record maybe can be delete, withdrawed all
                 if (_getRecordStaked(record)==0){
@@ -154,18 +155,22 @@ contract FarmAllowLockedToken is MiningFarm{
                 }
             }
             if (update>0){
-                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"update>totalStakedInSlot");
+                slot.totalStakedInSlot = slot.totalStakedInSlot.sub(update,"locked update>totalStakedInSlot");
             }
             if (update>0 && timeKey<currentKey){
                 if (update<=currentSlot.stakedLowestWaterMark){
-                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update,"amount > stakedLowestWaterMark");
+                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update,"locked amount > stakedLowestWaterMark");
                 }else{
                     currentSlot.stakedLowestWaterMark = 0;
                 }
                 
             }
         }
-        currentSlot.totalStaked = currentSlot.totalStaked.sub(amount,"amount>totalStaked");
+        if (amount<=currentSlot.totalStaked){
+            //maker it safer for withdraw SToken
+            currentSlot.totalStaked = currentSlot.totalStaked.sub(amount,"locked amount>totalStaked");
+        }
+
         for(uint256 xx=0;xx<toDelete.length;xx++){
             bool del = toDelete[xx];
             if (del){

@@ -480,7 +480,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
             }
             if (update>0 && timeKey<currentKey){
                 if (update<=currentSlot.stakedLowestWaterMark){
-                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update);
+                    currentSlot.stakedLowestWaterMark = currentSlot.stakedLowestWaterMark.sub(update,"update > stakedLowestWaterMark");
                 }else{
                     currentSlot.stakedLowestWaterMark = 0;
                 }
