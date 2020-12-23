@@ -140,6 +140,9 @@ contract("FuzzyTest", async accounts=>{
                 //else check with precision
                 let res = (FixedNumber.from(bal.toString()).divUnsafe(FixedNumber.from(no)))
                     .subUnsafe(FixedNumber.from(1.0));
+                if (res<FixedNumber.from(0)){
+                    res = FixedNumber.from(0).subUnsafe(res);
+                }
 
                 assert.equal((res<FixedNumber.from("0.0001")),true,
                     ii+" round "+tt+" assert error"+"actual:"+bal.toString()+" expected:"+no);

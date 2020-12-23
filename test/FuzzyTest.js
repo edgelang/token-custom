@@ -7,7 +7,7 @@ let dataFiles = [];
 let fuzzyDataPath = "./test/fuzzy";
 let folder = fs.readdirSync(fuzzyDataPath);
 folder.forEach(element => {
-    if (element.startsWith("series_45")){
+    if (element.startsWith("series_4")){
         let sub = fs.readdirSync(fuzzyDataPath+"/"+element);
         sub.forEach(subElement=>{
             if (subElement.endsWith(".json")){
