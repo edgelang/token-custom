@@ -26,6 +26,8 @@ const fs = require('fs');
 const mnemonic = fs.readFileSync("./console/secret").toString().trim();
 
 module.exports = {
+  // contracts_directory:"./contracts-3/defi/aave-1",
+  // contracts_build_directory: "./build/defi/aave1",
   /**
    * Networks define how you connect to your ethereum client and let you set the
    * defaults web3 uses to send transactions. If you don't specify one truffle
@@ -35,7 +37,6 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-
   networks: {
     // Useful for testing. The `development` name is special - truffle uses it by default
     // if it's defined here and no other network is specified at the command line.
@@ -102,7 +103,8 @@ module.exports = {
   // Set default mocha options here, use special reporters etc.
   mocha: {
     enableTimeouts:false,
-    timeout: 900000
+    timeout: 900000,
+    useColors: true
   },
 
   // Configure your compilers
