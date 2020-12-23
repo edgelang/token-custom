@@ -8,6 +8,8 @@ const Farm = artifacts.require("FarmWithApi");
 const MockERC20 = artifacts.require("MockERC20");
 
 module.exports = async function (deployer,network, accounts) {
-  let migrate = await deployer.deploy(Migrations,{overwrite: false});
-  
+    if (network!="bsc" && network!="ethmain"){
+        let migrate = await deployer.deploy(Migrations,{overwrite: false});
+    }
+
 };

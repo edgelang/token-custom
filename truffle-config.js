@@ -51,7 +51,7 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
     testbsc:{
-      networkCheckTimeout:300000,
+      networkCheckTimeout:600000,
       provider: function(){
         let wallet = new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s2.binance.org:8545`);
         let nonceTracker = new NonceTrackerSubprovider();
@@ -59,16 +59,20 @@ module.exports = {
         nonceTracker.setEngine(wallet.engine);
         return wallet;
       },
+      // gas: 6721975,
+      gasPrice: 10, // Specified in Wei
       network_id: 97,
-      confirmations: 4,
+      confirmations: 2,
       timeoutBlocks: 200,
       skipDryRun: true
     },
     bsc:{
-      networkCheckTimeout:300000,
+      networkCheckTimeout:30000000,
       provider: () => new HDWalletProvider(mnemonic, `https://bsc-dataseed1.binance.org`),
       network_id: 56,
-      confirmations: 10,
+      // gas: 6721975,
+      // gasPrice: 50, // Specified in Wei
+      confirmations: 4,
       timeoutBlocks: 200,
       skipDryRun: true,
       production: true
