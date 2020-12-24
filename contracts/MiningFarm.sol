@@ -365,18 +365,22 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev deposit reward token from account to last period
      */
-    function depositRewardFromForYesterday(address account,uint256 amount)public whenNotPaused{
+    function depositRewardFromForYesterday(uint256 amount)public whenNotPaused{
         uint time= now.sub(_miniStakePeriodInSeconds);
         uint key = time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
-        depositRewardFromForTime(account,amount,key);
+        _depositRewardFromForTime(address(msg.sender),amount,key);
     }
 
-    function depositRewardFromForToday(address account,uint256 amount)public whenNotPaused{
+    function depositRewardFromForToday(uint256 amount)public whenNotPaused{
         uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
-        depositRewardFromForTime(account,amount,key);
+        _depositRewardFromForTime(address(msg.sender),amount,key);
     }
 
-    function depositRewardFromForTime(address account,uint256 amount,uint time) public whenNotPaused{
+    function depositRewardFromForTime(address account,uint256 amount,uint time) public whenNotPaused onlyOwner{
+        _depositRewardFromForTime(account, amount, time);
+    }
+
+    function _depositRewardFromForTime(address account,uint256 amount,uint time) internal whenNotPaused{
         require(amount>0,"deposit number should greater than 0");
         _rewardToken.safeTransferFrom(account,address(this),amount);
         uint timeKey= time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);

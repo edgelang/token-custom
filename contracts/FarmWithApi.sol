@@ -117,8 +117,8 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
     function apiDepositRewardFromForTime(address account,uint256 amount,uint time) external override{
         depositRewardFromForTime(account,amount,time);
     }
-    function apiDepositRewardFrom(address account,uint256 amount)external override{
-        depositRewardFromForYesterday(account,amount);
+    function apiDepositRewardFrom(uint256 amount)external override{
+        depositRewardFromForYesterday(amount);
     }
     function apiClaimAllReward(address account)external override{
         claimAllReward(account);

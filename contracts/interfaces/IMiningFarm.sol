@@ -67,7 +67,7 @@ interface IMiningFarm{
     function apiDepositLockedToMining(uint256 amount) external;
 
     function apiDepositRewardFromForTime(address account,uint256 amount,uint time) external;
-    function apiDepositRewardFrom(address account,uint256 amount)external;
+    function apiDepositRewardFrom(uint256 amount)external;
     function apiClaimAllReward(address account)external;
     function apiClaimAmountOfReward(address account,uint256 amount,bool reCalculate)external;
 }

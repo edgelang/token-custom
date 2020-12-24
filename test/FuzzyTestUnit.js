@@ -202,7 +202,7 @@ contract("FuzzyTest", async accounts=>{
     }
     async function depositRewardFrom(num,time){
         await rToken.approve(farm.address,num,{from:accounts[0]});
-        farm.depositRewardFromForTime(accounts[0],num,time,{from:accounts[0]});
+        await farm.depositRewardFromForTime(accounts[0],num,time,{from:accounts[0]});
         adminRToken =adminRToken.sub(BigNumber.from(num));
         farmRToken+=num;
         let bal = await rToken.balanceOf(farm.address);

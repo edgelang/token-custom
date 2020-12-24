@@ -9,9 +9,15 @@ const Farm = artifacts.require("FarmWithApi");
 const MockERC20 = artifacts.require("MockERC20");
 
 module.exports = async function (deployer,network, accounts) {
-  let owner = accounts[2]; 
-  accounts[2] = accounts[0];
-  accounts[0] = owner;
+  let owner = accounts[0]; 
+  if (network=="bsc"|| network=="ethmain" 
+        // && network!="testbsc"
+      ){
+    owner = accounts[2]; 
+    accounts[2] = accounts[0];
+    accounts[0] = owner;
+  }
+  
   // console.log(deployer);
   // const instance = await deployProxy(STToken,
   //   ['StandardBTCHashrateToken','BTCST'],
@@ -20,12 +26,12 @@ module.exports = async function (deployer,network, accounts) {
   let farm_desc= "a testing farm";
   let rewardToken = {};
   if (network!="bsc" && network!="ethmain" 
-        && network!="testbsc"
+        // && network!="testbsc"
       ){
     rewardToken = await deployer.deploy(MockERC20,"Bitcoin Mock","MBTC",BigNumber.from("10000000000000000000000"),{from:owner});
     rewardToken = await MockERC20.deployed();
   }else if (network=="bsc"
-        ||network=="testbsc"
+        // ||network=="testbsc"
     ){
     //btcb token address
     rewardToken = {"address":"0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c"};
@@ -51,7 +57,7 @@ module.exports = async function (deployer,network, accounts) {
   farm = await Farm.deployed();
 
   if (network!="bsc" && network!="ethmain"
-        && network!="testbsc"
+        // && network!="testbsc"
     ){
     let initPeriod = 300;
     await farm.changeMiniStakePeriodInSeconds(initPeriod,{from:owner});
