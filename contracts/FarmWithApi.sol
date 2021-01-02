@@ -82,7 +82,7 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
      */
     function emergencyWithdrawReward(uint256 amount) external onlyOwner{
         uint256 bal =_rewardToken.balanceOf(address(this));
-        require(bal>=amount,"withdraw amount exceeds the reward balance");
+        require(bal>=amount,"withdraw amount exceeds the reward token's balance");
         _rewardToken.transfer(owner(),amount);
     }
     /**
@@ -90,7 +90,7 @@ contract FarmWithApi is FarmAllowLockedToken,IMiningFarm{
      */
     function emergencyWithdrawSToken(uint256 amount) external onlyOwner{
         uint256 bal =_stoken.balanceOf(address(this));
-        require(bal>=amount,"withdraw amount exceeds the reward balance");
+        require(bal>=amount,"withdraw amount exceeds the hashrate token's balance");
         _stoken.transfer(owner(),amount);
     }
 
