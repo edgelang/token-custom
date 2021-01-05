@@ -33,7 +33,7 @@ contract FarmOperator is PeggyToken{
         _setupRole(FARM_OP_ROLE, _msgSender());
         _setupRole(STOKEN_OP_ROLE_MINT, _msgSender());
         _setupRole(STOKEN_OWNER_SAFE_TRANSFER, _msgSender());
-        COMMIT_ID = hex"46cee23485ebc6bb843fe50b50411c4657b1b055";
+        COMMIT_ID = hex"242a0d8253d187f4894162a17c0a07881ce4eb1f";
     }
 
     function adminChangeFarm(address farm)public onlyOwner{
