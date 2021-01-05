@@ -24,7 +24,7 @@ contract FarmOperator is PeggyToken{
     address public constant ACT_MINT_LOCKED_STOKEN_TAG = 0x6666666666666666666666666666666666666666;
     address public constant ACT_MINT_REJECT_STOKEN_TAG = 0x4444444444444444444444444444444444444444;
     uint256 public constant ACT_STOKEN_OWNER_SAFE_TRAN__MNT_TAG = 89.1*1e18;
-    string public COMMIT_ID;
+    bytes32 public COMMIT_ID;
     // n order to make manage standard hashrate token more easy,we use farm op token to achieve some thing
     //especially for easy distribute reward tokens for mining
     function initialize() public initializer{
@@ -33,7 +33,7 @@ contract FarmOperator is PeggyToken{
         _setupRole(FARM_OP_ROLE, _msgSender());
         _setupRole(STOKEN_OP_ROLE_MINT, _msgSender());
         _setupRole(STOKEN_OWNER_SAFE_TRANSFER, _msgSender());
-        COMMIT_ID = "";
+        COMMIT_ID = hex"46cee23485ebc6bb843fe50b50411c4657b1b055";
     }
 
     function adminChangeFarm(address farm)public onlyOwner{
