@@ -24,33 +24,41 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     using TokenUtility for *;
 
     //a string to describe our mining farm
+    //描述
     string public _farmDescription;
     //stake this token to mine reward token
+    //质押Token BTCST
     StandardHashrateToken public _stoken;
     //which token to be mined by user's stake action
+    //奖励Token WBTC
     IERC20Upgradeable public _rewardToken;
     //a timestamp in seconds used as our mining start base time
+    //staking 开始时间
     uint public _farmStartedTime;
     // Dev address.
     address public _devaddr;
     
     // a full mining stake period of time in seconds unit
     // if one's stake time was less than this user won't get reward
+    //一个完整的采矿收益时间（秒为单位），用户质押时间少于它就不会获得奖励
     uint public _miniStakePeriodInSeconds;
 
+    //总开采量wbtc
     uint256 public _allTimeTotalMined;
     //total reward still in pool, not claimed
+    //总共没领取奖励在池子里的wbtc
     uint256 public _totalRewardInPool;
 
     //stake to mine record splited by time period
+    //staking 的记录
     struct StakeRecord{
-        uint    timeKey;//when
+        uint    timeKey;//when  时间
         // address account;//which account
-        uint256 amount;//how much amount SToken staked 
-        uint256 lockedAmount;//how much locked amount SToken staked 
+        uint256 amount;//how much amount SToken staked  质押多少BTCST
+        uint256 lockedAmount;//how much locked amount SToken staked 锁住的BTCST
         
-        uint256 withdrawed;//how much amount SToken withdrawed from this record
-        uint256 lockedWithdrawed;//how much locked amount SToken withdrawed from this record
+        uint256 withdrawed;//how much amount SToken withdrawed from this record  从这次记录中提取了多少BTCST
+        uint256 lockedWithdrawed;//how much locked amount SToken withdrawed from this record   从这次记录中提取了多少锁住的BTCST
     }
     /**
     * @dev period denotes (period start time,period end time], 
@@ -59,44 +67,62 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     * to store users' info
     * stored in address key-indexed
     */
+
+    //用户详情
     struct UserInfo {
         //how many STokens the user has provided in all
+        //总共质押了多少 BTCST
         uint256 amount;
         //how many locked STokens the user has provided in all
+        //总共质押了多少锁住的BTCST
         uint256 lockedAmount;
 
         //when >0 denotes that reward before this time already update into rewardBalanceInpool
+        //上次更新奖励的时间
         uint lastUpdateRewardTime;
 
         //all his lifetime mined target token amount
+        //全部应该开采的WBTC的数量
         uint256 allTimeMinedBalance;
         //mining reward balances in pool without widthdraw
+        //挖矿的收入在池子里还没提取的
         uint256 rewardBalanceInpool;
 
         //all time reward balance claimed
+        //所有时间被解放的奖励
         uint256 allTimeRewardClaimed;
         
         //stake info account =>(time-key => staked record)
+        //操作记录
         mapping(uint => StakeRecord) stakeInfo;
         //store time-key arrays for stakeInfo
+        //时间索引
         uint[] stakedTimeIndex;
     }
     /**
      * @dev slot stores info of each period's mining info
      */
+    //采矿信息
     struct RoundSlotInfo{
         //mining record submit by admin or submiter
         //MiningReward reward;//reward info in this period
+        //上次提交的人
         address rLastSubmiter;
+        //奖励的WBTC代币
         uint256 rAmount;//how much reward token deposit
+        //累积奖励的WBTC代币
         uint256 rAccumulateAmount;
         //before was reward
 
-        uint256 totalStaked;//totalStaked = previous round's totalStaked + this Round's total staked 
+        //总共的质押量
+        uint256 totalStaked;//totalStaked = previous round's totalStaked + this Round's total staked
+        //本次奖励的水位
         uint256 stakedLowestWaterMark;//lawest water mark for this slot
-        
+
+        //本次奖励的总质押  
         uint256 totalStakedInSlot;//this Round's total staked
         //store addresses set which staked in this slot
+        //地址集
         address[] stakedAddressSet;
     }
     
@@ -105,8 +131,10 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     mapping (address => UserInfo) public _userInfo;
     //reward records split recorded by round slots 
     //time-key => RoundSlotInfo
+    //采矿信息记录，时间为key
     mapping (uint=>RoundSlotInfo) public _roundSlots;
     //store time-key arrays for slots
+    //记录采矿操作的时间
     uint[] public _roundSlotsIndex;
     //account which is mining in this farm
     EnumerableSet.AddressSet private _miningAccountSet;
@@ -134,31 +162,37 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         _farmDescription = desc;
         _farmStartedTime = startTime;
     }
+    //改变状态
     function ownerPause()public onlyOwner{
         _pause();
     }
     function ownerUnpause()public onlyOwner{
         _unpause();
     }
+    //改变开始时间
     function changeBaseTime(uint time)public onlyOwner{
         require(time>0,"base time should >0");
         _farmStartedTime = time;
     }
 
+    //改变一个完整的采矿收益时间（秒为单位）
     function changeMiniStakePeriodInSeconds(uint period) public onlyOwner{
         require(period>0,"mining period should >0");
         _miniStakePeriodInSeconds = period;
     }
 
+    //改变奖励Token
     function changeRewardToken(IERC20Upgradeable rewardToken) public onlyOwner{
         _rewardToken = rewardToken;
     }
+    //改变质押Token
     function changeSToken(StandardHashrateToken stoken)public onlyOwner{
         _stoken =stoken;
     }
     /**
      * @dev return the staked total number of SToken
      */
+    //总共质押了多少
     function totalStaked()public virtual view returns(uint256){
         uint256 amount = 0;
         uint256 len = _miningAccountSet.length();
@@ -173,6 +207,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev return how many user is mining
      */
+    //总共多少用户在挖矿
     function totalUserMining()public view returns(uint256){
         return _miningAccountSet.length();
     }
@@ -180,11 +215,14 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev return hown much already mined from account 
      */
+    //
+    //返回用户总共以及挖到的WBTC
     function totalMinedRewardFrom(address account)public view returns(uint256){
         UserInfo memory user = _userInfo[account];
         return user.allTimeMinedBalance;
     }
 
+    //返回用户所有时间被解放的奖励
     function totalClaimedRewardFrom(address account)public view returns(uint256){
         UserInfo memory user = _userInfo[account];
         return user.allTimeRewardClaimed;
@@ -192,6 +230,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev return hown much already mined from account without widthdraw
      */
+    //返回用户还在池子里没领取的奖励
     function totalRewardInPoolFrom(address account)public view returns(uint256){
         UserInfo memory user = _userInfo[account];
         return user.rewardBalanceInpool;
@@ -200,12 +239,14 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev return hown much reward tokens in mining pool
      */
+    //池子里总共的奖励
     function totalRewardInPool()public view returns(uint256){
         return _totalRewardInPool;
     }
     /**
      * @dev return the mining records of specific day
      */
+    //返回指定时间的采矿记录中的采矿信息
     function miningRewardIn(uint day)public view returns (address,uint256,uint256){
         uint key = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         RoundSlotInfo memory slot = _roundSlots[key];
@@ -215,12 +256,14 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev return the stake records of specific day
      */
+    //返回指定时间指定用户的stake记录
     function stakeRecord(address account,uint day)public view returns (uint,uint256,uint256,uint256,uint256) {
         uint key = day.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         UserInfo storage user = _userInfo[account];
         StakeRecord storage record = user.stakeInfo[key];
         return (record.timeKey,record.amount,record.lockedAmount,record.withdrawed,record.lockedWithdrawed);
     }
+    //返回指定用户 before时间以前的收益
     function getUncalculateRewardBalanceInPoolBefore(address account,uint before) public view returns(uint256){
         UserInfo storage user = _userInfo[account];
         uint lastUpdate = user.lastUpdateRewardTime;
@@ -242,6 +285,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         }
         return minedTotal;
     }
+    //得到用户在池子里总共的奖励
     function getTotalRewardBalanceInPool(address account) public view returns (uint256){
         uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
         UserInfo memory user = _userInfo[account];
@@ -250,7 +294,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         return old.add(mined);
     }
 
-
+    //返回指定时间的采矿记录
     function _getRoundSlotInfo(uint timeKey)internal view returns(RoundSlotInfo memory){
         return _roundSlots[timeKey];
     }
@@ -262,15 +306,19 @@ contract MiningFarm is Ownable,Pausable,IFarm{
             token.transfer(to,amount);
         }
     }
+    //增加挖矿账户
     function _addMingAccount(address account)internal{
         _miningAccountSet.add(account);
     }
+    //得到所有挖矿账户
     function _getMingAccount() internal view returns (EnumerableSet.AddressSet memory){
         return _miningAccountSet;
     }
+    //得到指定ii的地址
     function getMiningAccountAt(uint256 ii)internal view returns (address){
         return _miningAccountSet.at(ii);
     }
+    //更新质押之后的索引
     function _updateIndexAfterDeposit(address account,uint key,uint256 amount)internal {
         UserInfo storage user = _userInfo[account];
         //update round slot
@@ -289,6 +337,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
 
         _initOrUpdateLowestWaterMarkAndTotalStaked(key,amount);
     }
+    //获取最大以及开采的时间
     function _getMaxAlreadyMinedTimeKey() internal view returns (uint){
         uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         return key.sub(_miniStakePeriodInSeconds*2);
@@ -296,6 +345,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev denote how to calculate the user's remain staked amount for stake record
      */
+    //
     function _getRecordStaked(StakeRecord memory record)internal pure virtual returns(uint256){
         return record.amount.sub(record.withdrawed,"withdrawed>amount");
     }
@@ -303,6 +353,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
      * @dev calculate mined reward during after and before time, from the stake record
      * (after,before]
      */
+    //根据记录以及起始时间计算挖矿收益
     function _calculateMinedRewardDuringFor(StakeRecord memory record,
         uint afterTime,uint beforeTime)internal virtual view returns(uint256){
         uint256 remainStaked = _getRecordStaked(record);
@@ -331,6 +382,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         return mined;
     }
 
+    //质押入口
     function depositToMiningBySTokenTransfer(address from,uint256 amount)external override{
         require(address(msg.sender)==address(_stoken),"require callee from stoken,only stoken can activly notice farm to stake other's token to mining");
         _depositToMiningFrom(from, amount);
@@ -338,9 +390,11 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev deposit STokens to mine reward tokens
      */
+    //质押入口
     function depositToMining(uint256 amount)public override{
         _depositToMiningFrom(address(msg.sender), amount);
     }
+    //具体的质押实现
     function _depositToMiningFrom(address account,uint256 amount)internal  whenNotPaused{
         require(amount>0,"deposit number should greater than 0");
         //first try to transfer amount from sender to this contract
@@ -365,17 +419,20 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev deposit reward token from account to last period
      */
+    //质押奖励的金额到上次的周期
     function depositRewardFromForYesterday(uint256 amount)public whenNotPaused{
         uint time= now.sub(_miniStakePeriodInSeconds);
         uint key = time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         _depositRewardFromForTime(address(msg.sender),amount,key);
     }
 
+    //质押奖励的金额到这次的周期
     function depositRewardFromForToday(uint256 amount)public whenNotPaused{
         uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         _depositRewardFromForTime(address(msg.sender),amount,key);
     }
 
+    //指定账户，指定时间，指定金额 查询奖励（仅限管理员）
     function depositRewardFromForTime(address account,uint256 amount,uint time) public whenNotPaused onlyOwner{
         _depositRewardFromForTime(account, amount, time);
     }
@@ -428,6 +485,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev exit mining by withdraw all STokens
      */
+    //取出所有BTCST
     function withdrawAllSToken()public virtual{
         address account = address(msg.sender);
         UserInfo storage user = _userInfo[account];
@@ -438,6 +496,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev exit mining by withdraw a part of STokens
      */
+    //取出指定金额的BTCST
     function withdrawLatestSToken(uint256 amount)public{
         address account = address(msg.sender);
         UserInfo storage user = _userInfo[account];
@@ -507,6 +566,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         emit Withdraw(account,amount); 
     }
 
+    //初始化或者更新最低水位和总质押量
     function _initOrUpdateLowestWaterMarkAndTotalStaked(uint nextKey,uint256 amount)internal{
         uint slotMaxLast = 0;
         RoundSlotInfo storage slot = _roundSlots[nextKey];
@@ -531,6 +591,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         }
     }
 
+    //获取并更新在池子里中的奖励
     function getAndUpdateRewardMinedInPool(address account) public returns (uint256){
         uint alreadyMinedTimeKey = _getMaxAlreadyMinedTimeKey(); 
         updateAlreadyMinedReward(account,alreadyMinedTimeKey);
@@ -538,6 +599,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
         return user.rewardBalanceInpool;
     }
 
+    //更新以及挖矿的奖励
     function updateAlreadyMinedReward(address account,uint before) public{
         uint256 minedTotal = getUncalculateRewardBalanceInPoolBefore(account,before);
         UserInfo storage user = _userInfo[account];
@@ -551,6 +613,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev claim all reward tokens
      */
+    //提取所有奖励
     function claimAllReward(address account)public{
         uint256 totalMined = getAndUpdateRewardMinedInPool(account);
         claimAmountOfReward(account,totalMined,false);
@@ -559,6 +622,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev claim amount of reward tokens
      */
+    //提取奖励
     function claimAmountOfReward(address account,uint256 amount,bool reCalculate)public{
         if (reCalculate){
             getAndUpdateRewardMinedInPool(account);
