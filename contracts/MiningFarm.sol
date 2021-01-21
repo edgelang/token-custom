@@ -337,7 +337,7 @@ contract MiningFarm is Ownable,Pausable,IFarm{
 
         _initOrUpdateLowestWaterMarkAndTotalStaked(key,amount);
     }
-    //获取最大以及开采的时间
+    //获取最大已经开采的时间
     function _getMaxAlreadyMinedTimeKey() internal view returns (uint){
         uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         return key.sub(_miniStakePeriodInSeconds*2);
@@ -419,20 +419,20 @@ contract MiningFarm is Ownable,Pausable,IFarm{
     /**
      * @dev deposit reward token from account to last period
      */
-    //质押奖励的金额到上次的周期
+    //发送质押奖励的金额到上次的周期
     function depositRewardFromForYesterday(uint256 amount)public whenNotPaused{
         uint time= now.sub(_miniStakePeriodInSeconds);
         uint key = time.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         _depositRewardFromForTime(address(msg.sender),amount,key);
     }
 
-    //质押奖励的金额到这次的周期
+    //发送质押奖励的金额到这次的周期
     function depositRewardFromForToday(uint256 amount)public whenNotPaused{
         uint key = now.getTimeKey(_farmStartedTime,_miniStakePeriodInSeconds);
         _depositRewardFromForTime(address(msg.sender),amount,key);
     }
 
-    //指定账户，指定时间，指定金额 查询奖励（仅限管理员）
+    //指定账户，指定时间，指定金额 发送奖励（仅限管理员）
     function depositRewardFromForTime(address account,uint256 amount,uint time) public whenNotPaused onlyOwner{
         _depositRewardFromForTime(account, amount, time);
     }

@@ -13,24 +13,29 @@ contract LinearReleaseToken is PeggyToken,ISTokenERC20{
      * @dev how much time inall for linear time release minted tokens to unlock
      *
      */
+    //总共的锁住时间
     uint256 public _lockTime;
     /**
      * @dev during how many rounds, the token owner's token could be released
      */
+    //在多少轮之后token拥有者的token被释放
     uint256 public _lockRounds;
     /**
      *
      */
+    //锁住时间的单位
     uint256 public _lockTimeUnitPerSeconds;
 
     /**
      * @dev statistic data total supply which was mint by time lock
      */
+    //总共被锁住的数量
     uint256 private _totalSupplyReleaseByTimeLock;
 
     /**
      * @dev statistic data released total supply which was mint by time lock already
      */
+    //总共被释放的
     uint256 private _totalReleasedSupplyReleaseByTimeLock;
     
     /**
